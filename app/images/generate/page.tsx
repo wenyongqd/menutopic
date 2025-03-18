@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase";
+import { getUserCredits } from "@/lib/supabase";
 import { useAuth } from "@/components/providers/auth-provider";
 import Link from "next/link";
 import Dropzone from "react-dropzone";
@@ -112,19 +113,9 @@ export default function GenerateImagePage() {
       console.log("GeneratePage - Fetching credits for user:", user.id);
 
       try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from("user_profiles")
-          .select("credits") // 只选择credits字段
-          .eq("id", user.id)
-          .single();
-
-        if (error) throw error;
-
-        // 只使用credits字段
-        const userCredits = data?.credits || 0;
-        console.log("GeneratePage - Credits fetched:", userCredits);
-        setUserCredits(userCredits);
+        const credits = await getUserCredits();
+        console.log("GeneratePage - Credits fetched:", credits);
+        setUserCredits(credits || 0);
       } catch (error) {
         console.error("GeneratePage - Failed to fetch credits:", error);
         toast({
@@ -242,26 +233,22 @@ export default function GenerateImagePage() {
         const json = await res.json();
         console.log("parseMenu API response:", json);
 
-        // Fetch updated credits from the database
+        // Try to fetch the image from the database
         try {
-          if (user) {
-            const { data: updatedProfile, error } = await createClient()
-              .from("user_profiles")
-              .select("*")
-              .eq("id", user.id)
-              .single();
-
-            if (error) {
-              console.error("Failed to fetch updated credits:", error);
+          // Fetch updated credits from the database
+          try {
+            if (user) {
+              const updatedCredits = await getUserCredits();
+              setUserCredits(updatedCredits || 0);
             } else {
-              // Update the credits with the value from the database
-              const updatedCredits = updatedProfile?.credits || 0;
-              setUserCredits(updatedCredits);
+              console.error(
+                "User not found when trying to fetch updated credits"
+              );
+              // Still update the local state as a fallback
+              setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
             }
-          } else {
-            console.error(
-              "User not found when trying to fetch updated credits"
-            );
+          } catch (creditFetchError) {
+            console.error("Error fetching updated credits:", creditFetchError);
             // Still update the local state as a fallback
             setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
           }
@@ -363,24 +350,22 @@ export default function GenerateImagePage() {
       const json = await res.json();
       console.log("parseMenu API response:", json);
 
-      // Fetch updated credits from the database
+      // Try to fetch the image from the database
       try {
-        if (user) {
-          const { data: updatedProfile, error } = await createClient()
-            .from("user_profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-
-          if (error) {
-            console.error("Failed to fetch updated credits:", error);
+        // Fetch updated credits from the database
+        try {
+          if (user) {
+            const updatedCredits = await getUserCredits();
+            setUserCredits(updatedCredits || 0);
           } else {
-            // Update the credits with the value from the database
-            const updatedCredits = updatedProfile?.credits || 0;
-            setUserCredits(updatedCredits);
+            console.error(
+              "User not found when trying to fetch updated credits"
+            );
+            // Still update the local state as a fallback
+            setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
           }
-        } else {
-          console.error("User not found when trying to fetch updated credits");
+        } catch (creditFetchError) {
+          console.error("Error fetching updated credits:", creditFetchError);
           // Still update the local state as a fallback
           setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
         }
@@ -525,24 +510,22 @@ export default function GenerateImagePage() {
         throw new Error("Invalid response format from server");
       }
 
-      // Instead of just updating the local state, fetch the updated credits from the database
+      // Try to fetch the image from the database
       try {
-        if (user) {
-          const { data: updatedProfile, error } = await createClient()
-            .from("user_profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-
-          if (error) {
-            console.error("Failed to fetch updated credits:", error);
+        // Fetch updated credits from the database
+        try {
+          if (user) {
+            const updatedCredits = await getUserCredits();
+            setUserCredits(updatedCredits || 0);
           } else {
-            // Update the credits with the value from the database
-            const updatedCredits = updatedProfile?.credits || 0;
-            setUserCredits(updatedCredits);
+            console.error(
+              "User not found when trying to fetch updated credits"
+            );
+            // Still update the local state as a fallback
+            setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
           }
-        } else {
-          console.error("User not found when trying to fetch updated credits");
+        } catch (creditFetchError) {
+          console.error("Error fetching updated credits:", creditFetchError);
           // Still update the local state as a fallback
           setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
         }

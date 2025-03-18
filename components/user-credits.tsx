@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { getUserCredits } from '@/lib/supabase'
 import { useAuth } from '@/components/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { CreditCard, Plus, Loader2 } from 'lucide-react'
@@ -32,7 +33,6 @@ export function UserCredits() {
     
     try {
       console.log('UserCredits - Fetching credits for user:', user?.id || 'unknown (protected path)');
-      const supabase = createClient();
       
       // Add a small delay before fetching to ensure auth is properly initialized
       if (retryCount === 0) {
@@ -55,22 +55,13 @@ export function UserCredits() {
         return;
       }
       
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('credits')
-        .eq('id', user.id)
-        .single()
-        
-      if (error) {
-        console.error('UserCredits - Error fetching credits:', error);
-        throw error;
-      }
+      // 使用 getUserCredits 获取积分
+      const userCredits = await getUserCredits();
+      console.log('UserCredits - Credits fetched:', userCredits);
       
-      // 只使用credits字段
-      const userCredits = data?.credits || 0;
-      console.log('UserCredits - Credits fetched:', userCredits, 'Raw data:', data);
-      setCredits(userCredits)
-      setIsLoading(false)
+      // 如果 userCredits 为 null，则设为 0
+      setCredits(userCredits ?? 0);
+      setIsLoading(false);
     } catch (error) {
       console.error('UserCredits - Failed to fetch credits:', error)
       // If failed and still have retry attempts, wait and retry

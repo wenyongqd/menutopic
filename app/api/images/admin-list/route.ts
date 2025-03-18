@@ -2,19 +2,17 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/types/supabase';
 
 export async function POST(req: Request) {
   try {
     // 获取当前用户
     const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-    const { data: { session } } = await supabase.auth.getSession();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!session?.user) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Unauthorized' 
-      }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     // 解析请求体
@@ -39,7 +37,7 @@ export async function POST(req: Request) {
     }
     
     // 验证请求的 userId 是否与当前用户匹配
-    if (userId !== session.user.id) {
+    if (userId !== user.id) {
       // 这里可以添加额外的权限检查，例如检查用户是否为管理员
       // 但在这个例子中，我们只允许用户查看自己的图片
       return NextResponse.json({ 

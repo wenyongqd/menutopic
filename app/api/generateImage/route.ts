@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { createClient } from '@supabase/supabase-js';
 import * as Bytescale from "@bytescale/sdk";
+import { NextResponse } from 'next/server';
+import { Database } from '@/types/supabase';
 
 // Credits required per image
 const CREDITS_PER_IMAGE = 5;
@@ -72,17 +74,14 @@ export async function POST(request: Request) {
   try {
     // Get current user
     const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-    const { data: { session } } = await supabase.auth.getSession();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const { data: { user } } = await supabase.auth.getUser();
     
-    if (!session?.user) {
-      return Response.json({ 
-        error: "Unauthorized",
-        details: "You must be logged in to generate images"
-      }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const userId = session.user.id;
+    const userId = user.id;
     
     // 创建具有 service_role 权限的客户端，绕过 RLS
     const supabaseAdmin = createClient(

@@ -17,11 +17,11 @@ export async function POST(req: Request) {
     // Get current user
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
     
-    console.log('User session:', session?.user?.id || 'No user');
+    console.log('User:', user?.id || 'No user');
     
-    if (!session?.user) {
+    if (!user) {
       return new NextResponse('Unauthorized - Please log in', { status: 401 })
     }
     
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
         success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/credits/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/credits/purchase`,
         metadata: {
-          userId: session.user.id,
+          userId: user.id,
           packageId: packageId,
           credits: creditAmount.toString(),
         },

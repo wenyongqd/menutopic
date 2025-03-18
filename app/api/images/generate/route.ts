@@ -4,6 +4,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
 import * as Bytescale from "@bytescale/sdk"
 import { Together } from "together-ai"
+import { Database } from "@/types/supabase"
 
 // Credits required per image
 const CREDITS_PER_IMAGE = 5
@@ -75,19 +76,16 @@ async function base64ToBlob(base64: string, mimeType: string = 'image/png'): Pro
 
 export async function POST(req: Request) {
   try {
-    // Get current user
+    // 获取当前用户
     const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-    const { data: { session } } = await supabase.auth.getSession()
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore })
+    const { data: { user } } = await supabase.auth.getUser()
     
-    if (!session?.user) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Unauthorized' 
-      }, { status: 401 })
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    const userId = session.user.id
+    const userId = user.id
     
     // 创建具有 service_role 权限的客户端，绕过 RLS
     const supabaseAdmin = createClient(

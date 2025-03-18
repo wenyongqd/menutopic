@@ -16,7 +16,8 @@ export async function getCurrentUser() {
 // 获取当前会话
 export async function getCurrentSession() {
   const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
+  const session = user ? { user } : null
   return session
 }
 

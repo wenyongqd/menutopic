@@ -34,14 +34,25 @@ export async function createAdminClient() {
 export async function getServerSession() {
   try {
     const supabase = await createServerClient();
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await supabase.auth.getUser();
     
     if (error) {
-      console.error('Error getting server session:', error);
+      console.error('Error getting server user:', error);
       return null;
     }
     
-    return data.session;
+    // 为了保持向后兼容，创建类似会话的对象
+    if (data.user) {
+      return {
+        user: data.user,
+        access_token: '',
+        refresh_token: '',
+        expires_in: 0,
+        token_type: 'bearer'
+      };
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error getting server session:', error);
     return null;

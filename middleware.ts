@@ -44,14 +44,14 @@ export async function middleware(req: NextRequest) {
     // 创建 Supabase 客户端
     const supabase = createMiddlewareClient<Database>({ req, res })
     
-    // 尝试刷新会话 - 这会自动处理令牌刷新
-    const { data: { session }, error } = await supabase.auth.getSession()
+    // 尝试获取用户 - 这会通过服务器验证数据
+    const { data: { user }, error } = await supabase.auth.getUser()
     
     if (error) {
-      console.error('Middleware - Error refreshing session:', error)
+      console.error('Middleware - Error getting user:', error)
     }
     
-    const isAuthenticated = !!session
+    const isAuthenticated = !!user
     
     // 添加调试日志
     console.log(`Middleware - Path: ${path}, Authenticated: ${isAuthenticated}`)

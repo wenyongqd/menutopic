@@ -5,16 +5,13 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
   try {
-    // 获取当前用户
+    // Get current user
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
     
-    if (!session?.user) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'Unauthorized' 
-      }, { status: 401 })
+    if (!user) {
+      return new Response('Unauthorized', { status: 401 })
     }
     
     // 解析请求体
@@ -22,7 +19,7 @@ export async function POST(req: Request) {
     const { userId } = body
     
     // 验证请求的userId与当前登录用户是否匹配
-    if (userId !== session.user.id) {
+    if (userId !== user.id) {
       return NextResponse.json({ 
         success: false, 
         message: 'You can only fetch your own images' 

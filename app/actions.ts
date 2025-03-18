@@ -133,17 +133,17 @@ export async function serverLogout() {
 // 服务器端获取用户信息
 export async function getServerUserProfile() {
   const supabase = await createServerClient()
-  const { data, error: sessionError } = await supabase.auth.getSession()
+  const { data, error: userError } = await supabase.auth.getUser()
   
-  if (sessionError || !data.session?.user) {
-    console.error('Error getting session:', sessionError)
+  if (userError || !data.user) {
+    console.error('Error getting user:', userError)
     return null
   }
 
   const { data: profile, error } = await supabase
     .from('user_profiles')
     .select('*')
-    .eq('id', data.session.user.id)
+    .eq('id', data.user.id)
     .single()
 
   if (error) {
@@ -151,23 +151,23 @@ export async function getServerUserProfile() {
     return null
   }
 
-  return { user: data.session.user, profile }
+  return { user: data.user, profile }
 }
 
 // 服务器端获取用户积分
 export async function getServerUserCredits() {
   const supabase = await createServerClient()
-  const { data, error: sessionError } = await supabase.auth.getSession()
+  const { data, error: userError } = await supabase.auth.getUser()
   
-  if (sessionError || !data.session?.user) {
-    console.error('Error getting session:', sessionError)
+  if (userError || !data.user) {
+    console.error('Error getting user:', userError)
     return null
   }
 
   const { data: profile, error } = await supabase
     .from('user_profiles')
     .select('credits')
-    .eq('id', data.session.user.id)
+    .eq('id', data.user.id)
     .single()
 
   if (error) {
@@ -180,12 +180,12 @@ export async function getServerUserCredits() {
 
 // 服务器端获取用户最近的图片生成
 export async function getServerUserRecentImages(limit = 5) {
-  // 获取用户会话
+  // 获取用户
   const supabase = await createServerClient()
-  const { data, error: sessionError } = await supabase.auth.getSession()
+  const { data, error: userError } = await supabase.auth.getUser()
   
-  if (sessionError || !data.session?.user) {
-    console.error('Error getting session:', sessionError)
+  if (userError || !data.user) {
+    console.error('Error getting user:', userError)
     return []
   }
 
@@ -195,7 +195,7 @@ export async function getServerUserRecentImages(limit = 5) {
     const { data: images, error } = await supabaseAdmin
       .from('image_generations')
       .select('*')
-      .eq('user_id', data.session.user.id)
+      .eq('user_id', data.user.id)
       .order('created_at', { ascending: false })
       .limit(limit)
 

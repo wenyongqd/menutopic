@@ -95,44 +95,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       const supabase = createClient()
-      const { data: { session: newSession }, error } = await supabase.auth.getSession()
+      const { data: { user: newUser }, error } = await supabase.auth.getUser()
       
       if (error) {
-        console.error('AuthProvider - Error getting session:', error)
+        console.error('AuthProvider - Error getting user:', error)
         setIsLoading(false)
         isRefreshing.current = false;
         return
       }
       
-      console.log('AuthProvider - Session:', newSession ? `exists for user ${newSession.user.id}` : 'null')
+      console.log('AuthProvider - User:', newUser ? `exists with id ${newUser.id}` : 'null')
       
-      // 只有在会话状态真正变化时才更新状态
+      // 创建会话对象（为了保持接口兼容）
+      const newSession = newUser ? {
+        user: newUser,
+        access_token: '',
+        refresh_token: '',
+        expires_in: 0,
+        token_type: 'bearer'
+      } : null;
+      
+      // 只有在用户状态真正变化时才更新状态
       // 这样可以避免不必要的状态重置
       if (
-        (!session && newSession) || 
-        (session && !newSession) || 
-        (session?.user.id !== newSession?.user.id)
+        (!user && newUser) || 
+        (user && !newUser) || 
+        (user?.id !== newUser?.id)
       ) {
-        console.log('AuthProvider - Session state changed, updating');
+        console.log('AuthProvider - User state changed, updating');
         setSession(newSession);
-        setUser(newSession?.user ?? null);
+        setUser(newUser);
         
-        // 如果找到了会话，确保本地存储标记已设置
-        if (newSession && typeof window !== 'undefined') {
+        // 如果找到了用户，确保本地存储标记已设置
+        if (newUser && typeof window !== 'undefined') {
           localStorage.setItem('auth_session_established', 'true');
         }
       } else {
-        console.log('AuthProvider - Session state unchanged, preserving current state');
+        console.log('AuthProvider - User state unchanged, preserving current state');
       }
       
       authStateChecked.current = true;
       
       // 如果用户已登录，确保用户配置文件存在
-      if (newSession?.user) {
-        await ensureUserProfile(newSession.user.id)
+      if (newUser) {
+        await ensureUserProfile(newUser.id)
       }
     } catch (error) {
-      console.error('AuthProvider - Unexpected error getting session:', error)
+      console.error('AuthProvider - Unexpected error getting user:', error)
     } finally {
       setIsLoading(false)
       isRefreshing.current = false;
@@ -263,7 +272,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // 保存当前的用户和会话状态，以便在出错时恢复
     const currentUser = user;
-    const currentSession = session;
     
     console.log('AuthProvider - Current user before refresh:', currentUser?.id || 'null');
     
@@ -271,29 +279,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     new Promise<void>(async (resolve) => {
       try {
         // 直接使用 Supabase 客户端获取会话，而不是调用 getSession
-        const { data, error } = await createClient().auth.getSession();
+        const { data, error } = await createClient().auth.getUser();
         
         if (error) {
-          console.error('AuthProvider - Error refreshing session:', error);
+          console.error('AuthProvider - Error refreshing user:', error);
           // 出错时恢复原始状态
           console.log('AuthProvider - Error during refresh, preserving original state');
           resolve();
           return;
         }
         
-        const newSession = data.session;
+        const newUser = data.user;
+        
+        // 创建会话对象（为了保持接口兼容）
+        const newSession = newUser ? {
+          user: newUser,
+          access_token: '',
+          refresh_token: '',
+          expires_in: 0,
+          token_type: 'bearer'
+        } : null;
         
         // 只有在会话状态真正变化时才更新状态
         if (
-          (!currentSession && newSession) || 
-          (currentSession && !newSession) || 
-          (currentSession?.user.id !== newSession?.user.id)
+          (!currentUser && newUser) || 
+          (currentUser && !newUser) || 
+          (currentUser?.id !== newUser?.id)
         ) {
-          console.log('AuthProvider - Session state changed during refresh, updating');
+          console.log('AuthProvider - User state changed during refresh, updating');
           setSession(newSession);
-          setUser(newSession?.user ?? null);
+          setUser(newUser);
         } else {
-          console.log('AuthProvider - Session state unchanged during refresh, preserving current state');
+          console.log('AuthProvider - User state unchanged during refresh, preserving current state');
           // 确保状态保持一致
           if (currentUser && !user) {
             console.log('AuthProvider - User state was lost, restoring');
@@ -302,9 +319,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         
         // 如果有会话但用户状态为 null，修复这种不一致
-        if (newSession?.user && !user) {
+        if (newUser && !user) {
           console.log('AuthProvider - Inconsistent state detected, fixing user state');
-          setUser(newSession.user);
+          setUser(newUser);
         }
         
         resolve();

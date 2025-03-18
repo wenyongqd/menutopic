@@ -88,10 +88,26 @@ export function Header() {
       setIsMobileMenuOpen(false);
     }
     
-    // Navigate to the requested path
+    // 对于导航到受保护页面，先确保用户已认证
+    if (path === '/dashboard' || path.startsWith('/images/') || path.startsWith('/credits/')) {
+      // 先确保用户数据已刷新
+      refreshData();
+      
+      // 对于 /images/generate 页面，我们使用特殊处理
+      if (path === '/images/generate') {
+        console.log('Header - Using special navigation for generate page');
+        
+        // 1. 使用 window.location 而不是 router.push，确保页面完全重载
+        // 这样可以避免客户端导航造成的状态问题
+        window.location.href = path;
+        return; // 提前返回，不执行后续代码
+      }
+    }
+    
+    // 导航到请求路径
     router.push(path);
     
-    // Reset navigation state after a delay
+    // 重置导航状态
     setTimeout(() => {
       setIsNavigating(false);
     }, 1000);

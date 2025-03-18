@@ -82,33 +82,34 @@ export default function GenerateImagePage() {
   // 页面加载时刷新数据
   useEffect(() => {
     // 手动刷新数据，确保认证状态和用户数据是最新的
-    refreshData();
-  }, [refreshData]);
-
-  // 预加载JSZip库
-  useEffect(() => {
-    const preloadJSZip = async () => {
-      try {
-        await import("jszip");
-        setJsZipLoaded(true);
-      } catch (error) {
-        console.error("Failed to preload JSZip:", error);
+    console.log("GeneratePage - Initial mount, refreshing auth data");
+    
+    // 防止在数据加载时出现闪烁，先设置 isLoading 为 true
+    setIsLoading(true);
+    
+    // 使用超时确保即使数据加载失败也会结束加载状态
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.log("GeneratePage - Timeout reached, force ending loading state");
+        setIsLoading(false);
       }
-    };
-
-    preloadJSZip();
-  }, []);
+    }, 5000); // 5秒超时
+    
+    refreshData();
+    
+    return () => clearTimeout(timeoutId);
+  }, [refreshData]);
 
   // Fetch user credits
   useEffect(() => {
     async function fetchUserCredits() {
       if (!user) {
-        console.log("No user found, skipping credit fetch");
+        console.log("GeneratePage - No user found, skipping credit fetch");
         setIsLoading(false);
         return;
       }
 
-      console.log("Fetching credits for user:", user.id);
+      console.log("GeneratePage - Fetching credits for user:", user.id);
 
       try {
         const supabase = createClient();
@@ -123,10 +124,10 @@ export default function GenerateImagePage() {
         // Check which field exists and use it
         const credits =
           data?.credits !== undefined ? data.credits : data?.credit_amount || 0;
-        console.log("Credits fetched:", credits);
+        console.log("GeneratePage - Credits fetched:", credits);
         setUserCredits(credits);
       } catch (error) {
-        console.error("Failed to fetch credits:", error);
+        console.error("GeneratePage - Failed to fetch credits:", error);
         toast({
           title: "Error",
           description: "Failed to load your credit balance",
@@ -137,8 +138,30 @@ export default function GenerateImagePage() {
       }
     }
 
-    fetchUserCredits();
-  }, [user, toast]);
+    // 检查 user 是否已加载
+    if (user) {
+      console.log("GeneratePage - User detected, fetching credits");
+      fetchUserCredits();
+    } else if (!isLoading) {
+      // 如果已经完成加载但没有用户，可能是在等待认证
+      console.log("GeneratePage - Loading completed but no user found");
+      setIsLoading(false);
+    }
+  }, [user, toast, isLoading]);
+
+  // 预加载JSZip库
+  useEffect(() => {
+    const preloadJSZip = async () => {
+      try {
+        await import("jszip");
+        setJsZipLoaded(true);
+      } catch (error) {
+        console.error("Failed to preload JSZip:", error);
+      }
+    };
+
+    preloadJSZip();
+  }, []);
 
   // 处理菜单文件上传
   const handleFileChange = async (file: File) => {

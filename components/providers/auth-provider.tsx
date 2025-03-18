@@ -502,23 +502,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         document.cookie = "just_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
       
-      // 强制刷新路由
+      // 分离Supabase登出，不阻塞完成过程
+      // 这样即使Supabase登出失败，用户体验也不会受到影响
+      try {
+        const supabase = createClient()
+        supabase.auth.signOut().then(({ error }) => {
+          if (error) {
+            console.error('Error in Supabase signOut (non-blocking):', error)
+          } else {
+            console.log('Supabase signOut successful (non-blocking)')
+          }
+        }).catch(err => {
+          console.error('Exception in Supabase signOut (non-blocking):', err)
+        })
+      } catch (error) {
+        console.error('Failed to initialize signOut (non-blocking):', error)
+      }
+      
+      // 强制刷新路由状态
       router.refresh()
       
-      // 调用Supabase登出API
-      const supabase = createClient()
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Error in Supabase signOut:', error)
-      }
+      // 立即认为操作成功，减少等待时间
+      return Promise.resolve()
     } catch (error) {
       console.error('Error signing out:', error)
-      // 不使用 toast，直接记录错误
       
       // 即使出错，也确保用户状态被清除
       setUser(null)
       setSession(null)
+      
+      return Promise.reject(error)
     } finally {
+      // 立即复位加载状态
       setIsLoading(false)
     }
   }

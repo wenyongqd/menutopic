@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { LogOut, Loader2 } from "lucide-react";
 import { serverLogout } from "@/app/actions";
@@ -21,8 +21,18 @@ export function LogoutButton({
   onClick
 }: LogoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const logoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { signOut } = useAuth();
   const router = useRouter();
+
+  // 清理timeouts
+  useEffect(() => {
+    return () => {
+      if (logoutTimeoutRef.current) {
+        clearTimeout(logoutTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleLogout = async () => {
     // 如果有onClick回调，先执行
@@ -32,35 +42,39 @@ export function LogoutButton({
     
     setIsLoading(true);
     
+    // 设置强制超时，确保无论如何按钮都会恢复状态
+    logoutTimeoutRef.current = setTimeout(() => {
+      console.log('LogoutButton - Force resetting loading state after timeout');
+      setIsLoading(false);
+    }, 3000);
+    
     try {
       console.log('LogoutButton - Starting logout process');
       
-      // 先使用客户端方法清除本地状态
-      await signOut().catch(err => {
-        console.error('Client signOut error:', err);
-      });
-      
-      console.log('LogoutButton - Client signOut completed');
-      
-      // 手动导航到登录页面，而不是等待服务器操作
-      // 这样可以避免页面停留在当前页面等待服务器响应
-      router.push('/login');
-      
-      // 设置超时自动重置状态，以防导航失败
-      setTimeout(() => {
-        if (isLoading) {
-          console.log('LogoutButton - Resetting loading state after timeout');
-          setIsLoading(false);
-        }
-      }, 3000);
-      
-      // 然后非阻塞式地调用服务器操作进行登出
+      // 先非阻塞式地调用服务器操作进行登出
       serverLogout().catch(error => {
         console.error("Error in server logout:", error);
       });
+      
+      // 导航到登录页面
+      router.push('/login');
+      
+      // 直接执行客户端登出，清除状态
+      try {
+        await signOut();
+        console.log('LogoutButton - Client signOut completed');
+      } catch (err) {
+        console.error('Client signOut error:', err);
+      }
     } catch (error) {
       console.error("LogoutButton - Error logging out:", error);
       setIsLoading(false);
+      
+      // 出错时清除超时
+      if (logoutTimeoutRef.current) {
+        clearTimeout(logoutTimeoutRef.current);
+        logoutTimeoutRef.current = null;
+      }
     }
   };
 

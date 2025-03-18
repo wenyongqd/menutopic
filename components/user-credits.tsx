@@ -18,15 +18,8 @@ export function UserCredits() {
   const router = useRouter();
   const isCreditsPage = pathname.startsWith("/credits");
 
-  // 监听路径变化，在路径变化时刷新积分数据
-  useEffect(() => {
-    if (user) {
-      console.log('UserCredits - Path changed, refreshing credits data');
-      fetchCredits();
-    }
-  }, [pathname, user]);
-
-  const fetchCredits = async () => {
+  // 添加重试逻辑
+  const fetchCredits = async (retryCount = 0) => {
     if (!user) {
       setIsLoading(false)
       return
@@ -35,7 +28,6 @@ export function UserCredits() {
     try {
       console.log('UserCredits - Fetching credits for user:', user.id);
       const supabase = createClient();
-      // Fetch all fields to handle different column names
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -44,16 +36,29 @@ export function UserCredits() {
         
       if (error) throw error
       
-      // Check which field exists and use it
       const userCredits = data?.credits !== undefined ? data.credits : (data?.credit_amount || 0);
       console.log('UserCredits - Credits fetched:', userCredits);
       setCredits(userCredits)
+      setIsLoading(false)
     } catch (error) {
       console.error('Failed to fetch credits', error)
-    } finally {
-      setIsLoading(false)
+      // 如果失败且还有重试次数，则等待后重试
+      if (retryCount < 3) {
+        setTimeout(() => {
+          fetchCredits(retryCount + 1)
+        }, 1000 * (retryCount + 1)) // 逐步增加重试间隔
+      } else {
+        setIsLoading(false)
+      }
     }
   }
+
+  // 当用户状态变化时重新获取积分
+  useEffect(() => {
+    if (user) {
+      fetchCredits()
+    }
+  }, [user])
   
   useEffect(() => {
     fetchCredits()

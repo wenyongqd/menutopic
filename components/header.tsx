@@ -57,27 +57,6 @@ export function Header() {
     console.log('Header - User state changed:', user ? `User ${user.id} logged in` : 'No user');
   }, [user]);
 
-  // 检查认证状态和cookie
-  useEffect(() => {
-    const checkAuthState = async () => {
-      // 检查是否存在auth_state_updated cookie
-      const cookies = document.cookie.split(';')
-      const hasAuthUpdate = cookies.some(cookie => 
-        cookie.trim().startsWith('auth_state_updated=')
-      )
-
-      if (hasAuthUpdate) {
-        console.log('Auth state updated, refreshing...')
-        await refreshData()
-        
-        // 清除cookie
-        document.cookie = "auth_state_updated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
-      }
-    }
-
-    checkAuthState()
-  }, [pathname, refreshData])
-
   return (
     <header 
       className={`sticky top-0 z-50 transition-all duration-300 ${

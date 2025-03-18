@@ -166,7 +166,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
               <span className="absolute inset-0 rounded-lg bg-primary-100/10 scale-0 transition-transform group-hover:scale-100"></span>
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-primary-100 to-primary-300 bg-clip-text text-transparent">
-              MenuMuse
+              MenuToPic
             </span>
           </Link>
           
@@ -202,7 +202,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                 </Link>
                 <Link 
                   href="/" 
-                  className="inline-flex items-center justify-center rounded-md bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors shadow-sm hover:shadow"
+                  className="inline-flex items-center justify-center rounded-lg bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors shadow-sm hover:shadow"
                 >
                   Get Started
                 </Link>
@@ -309,7 +309,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                 <div className="pt-2 flex flex-col space-y-2">
                   <Link 
                     href="/" 
-                    className="w-full inline-flex items-center justify-center rounded-md bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors"
+                    className="w-full inline-flex items-center justify-center rounded-lg bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Get Started
@@ -386,7 +386,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                       <span>Sign In</span>
                     </Button>
                     <Button
-                      className="w-full inline-flex items-center justify-center rounded-md bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors"
+                      className="w-full inline-flex items-center justify-center rounded-lg bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors"
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         handleNavigation('/register');

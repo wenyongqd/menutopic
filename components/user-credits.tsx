@@ -240,7 +240,7 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
           size="sm"
           onClick={handleBuyCredits}
           disabled={isNavigating}
-          className={`flex items-center gap-1 hover:bg-bg-200 text-text-200 hover:text-primary-100 transition-colors ${
+          className={`flex rounded-lg items-center gap-1 hover:bg-bg-200 text-text-200 hover:text-primary-100 transition-colors ${
             isCreditsPage ? "bg-primary-100/10 text-primary-100" : ""
           }`}
         >

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { User } from '@supabase/supabase-js'
-import { CreditCard, Package, ShoppingCart, Sparkles, Shield, ArrowRight, Check, RefreshCw } from 'lucide-react'
+import { CreditCard, Package, ShoppingCart, Sparkles, Shield, ArrowRight, Check } from 'lucide-react'
 import Link from 'next/link'
 
 interface CreditPackage {

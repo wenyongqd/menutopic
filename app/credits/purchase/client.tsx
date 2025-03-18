@@ -253,7 +253,7 @@ export function PurchaseClient({ user, initialPackages }: PurchaseClientProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in" style={{ animationDelay: "0.1s" }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 fade-in" style={{ animationDelay: "0.1s" }}>
         {displayPackages.map((pkg, index) => {
           const creditAmount = pkg.credits !== undefined ? pkg.credits : pkg.credit_amount;
           const popular = isPopular(index);
@@ -360,19 +360,6 @@ export function PurchaseClient({ user, initialPackages }: PurchaseClientProps) {
               Proceed to Checkout
             </>
           )}
-        </Button>
-      </div>
-      
-      <div className="mt-4 text-center text-sm text-text-200">
-        <p>Debug Info: {packages.length} packages available, Selected: {selectedPackage || 'none'}</p>
-        <Button 
-          onClick={() => window.location.reload()} 
-          variant="outline" 
-          size="sm" 
-          className="mt-2"
-        >
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh Data
         </Button>
       </div>
       

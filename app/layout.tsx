@@ -63,7 +63,7 @@ export default function RootLayout({
           <ToastProvider>
             <AnimationProvider>
               <Header />
-              <main className="flex-grow bg-bg-100" style={{ zoom: 0.92 }}>{children}</main>
+              <main className="flex-grow bg-bg-100" style={{ zoom: 0.95 }}>{children}</main>
               <Footer />
             </AnimationProvider>
           </ToastProvider>

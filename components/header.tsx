@@ -10,6 +10,7 @@ import { UserCredits } from "@/components/user-credits";
 import { Button } from "@/components/ui/button";
 import { Menu, X, User, Home, Image, CreditCard } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
+import { getUserCredits } from "@/lib/supabase";
 
 export function Header() {
   const pathname = usePathname();
@@ -24,6 +25,7 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [mountedWithUser, setMountedWithUser] = useState(false);
+  const [serverCredits, setServerCredits] = useState<number | undefined>(undefined);
 
   // Detect scroll to change header style
   useEffect(() => {
@@ -34,6 +36,24 @@ export function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // 在客户端获取用户积分，确保header中显示正确的积分值
+  useEffect(() => {
+    async function fetchInitialCredits() {
+      if (user) {
+        try {
+          const credits = await getUserCredits();
+          setServerCredits(credits ?? 0);
+          console.log('Header - Initial credits fetched:', credits);
+        } catch (error) {
+          console.error('Header - Failed to fetch initial credits:', error);
+          setServerCredits(0);
+        }
+      }
+    }
+    
+    fetchInitialCredits();
+  }, [user]);
 
   // Forcibly refresh auth on dashboard page or when pathname changes
   useEffect(() => {
@@ -186,7 +206,7 @@ export function Header() {
             <div className="hidden md:flex items-center gap-4">
               {user || (isDashboard || isGeneratePage || isCreditsPage) ? (
                 <>
-                  <UserCredits />
+                  <UserCredits initialCredits={serverCredits} />
                   <div className="flex items-center gap-2">
                     <Button 
                       variant="ghost" 
@@ -295,7 +315,7 @@ export function Header() {
                 {user || (isDashboard || isGeneratePage || isCreditsPage) ? (
                   <>
                     <div className="py-2">
-                      <UserCredits />
+                      <UserCredits initialCredits={serverCredits} />
                     </div>
                     <Button 
                       className={`flex items-center space-x-2 py-2 justify-start ${

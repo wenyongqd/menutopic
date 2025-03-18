@@ -9,9 +9,13 @@ import { Button } from '@/components/ui/button'
 import { CreditCard, Plus, Loader2 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
-export function UserCredits() {
-  const [credits, setCredits] = useState<number | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+interface UserCreditsProps {
+  initialCredits?: number;
+}
+
+export function UserCredits({ initialCredits }: UserCreditsProps) {
+  const [credits, setCredits] = useState<number | null>(initialCredits ?? null)
+  const [isLoading, setIsLoading] = useState(initialCredits === undefined)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
   const { user } = useAuth()
@@ -98,15 +102,22 @@ export function UserCredits() {
     }
   }
 
-  // Call fetchCredits when user changes
+  // Call fetchCredits when user changes, but only if initialCredits is not provided
   useEffect(() => {
-    console.log('UserCredits - User state changed, user:', user?.id);
+    console.log('UserCredits - User state changed, user:', user?.id, 'initialCredits:', initialCredits);
+    if (initialCredits !== undefined) {
+      console.log('UserCredits - Using provided initialCredits:', initialCredits);
+      setCredits(initialCredits);
+      setIsLoading(false);
+      return;
+    }
+    
     if (user || isProtectedPath) {
       fetchCredits()
     } else {
       setIsLoading(false)
     }
-  }, [user, isProtectedPath])
+  }, [user, isProtectedPath, initialCredits])
   
   // Set up real-time listener for credit changes
   useEffect(() => {

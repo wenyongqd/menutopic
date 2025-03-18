@@ -49,22 +49,16 @@ export async function getUserProfile() {
 }
 
 // 获取用户积分
-export async function getUserCredits(userId?: string) {
+export async function getUserCredits() {
   const supabase = createClient()
   
-  // 如果提供了用户ID，直接使用它，否则获取当前登录用户
-  let id = userId
-  
-  if (!id) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
-    id = user.id
-  }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
   
   const { data, error } = await supabase
     .from('user_profiles')
     .select('credits')
-    .eq('id', id)
+    .eq('id', user.id)
     .single()
     
   if (error) {

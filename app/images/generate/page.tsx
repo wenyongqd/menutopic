@@ -115,7 +115,7 @@ export default function GenerateImagePage() {
       try {
         const credits = await getUserCredits();
         console.log("GeneratePage - Credits fetched:", credits);
-        setUserCredits(credits || 0);
+        setUserCredits(credits ?? 0);
       } catch (error) {
         console.error("GeneratePage - Failed to fetch credits:", error);
         toast({
@@ -239,7 +239,7 @@ export default function GenerateImagePage() {
           try {
             if (user) {
               const updatedCredits = await getUserCredits();
-              setUserCredits(updatedCredits || 0);
+              setUserCredits(updatedCredits ?? 0);
             } else {
               console.error(
                 "User not found when trying to fetch updated credits"
@@ -356,7 +356,7 @@ export default function GenerateImagePage() {
         try {
           if (user) {
             const updatedCredits = await getUserCredits();
-            setUserCredits(updatedCredits || 0);
+            setUserCredits(updatedCredits ?? 0);
           } else {
             console.error(
               "User not found when trying to fetch updated credits"
@@ -516,7 +516,7 @@ export default function GenerateImagePage() {
         try {
           if (user) {
             const updatedCredits = await getUserCredits();
-            setUserCredits(updatedCredits || 0);
+            setUserCredits(updatedCredits ?? 0);
           } else {
             console.error(
               "User not found when trying to fetch updated credits"

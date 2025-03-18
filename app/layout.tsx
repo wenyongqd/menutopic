@@ -13,9 +13,9 @@ const PlausibleProvider = dynamic(() => import("next-plausible"), { ssr: false }
 const inter = Inter({ subsets: ["latin"] });
 const title = "MenuToPic – Visualize your menu items with nice images";
 const description = "Visualize your menu items with nice images";
-const url = "https://www.MenuToPic.co/";
-const ogimage = "https://www.MenuToPic.co/og-image.png";
-const sitename = "MenuToPic.co";
+const url = "https://www.MenuToPic.com/";
+const ogimage = "https://www.MenuToPic.com/og-image.png";
+const sitename = "MenuToPic.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(url),

@@ -14,14 +14,20 @@ export async function GET(request: Request) {
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     await supabase.auth.exchangeCodeForSession(code)
     console.log('Session exchanged successfully')
+
+    cookieStore.set('auth_state_updated', 'true', {
+      path: '/',
+      maxAge: 60,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    })
   }
 
-  // 确保重定向路径以 / 开头
   const normalizedRedirectPath = redirectTo.startsWith('/') ? redirectTo : `/${redirectTo}`
   const redirectUrl = `${requestUrl.origin}${normalizedRedirectPath}`
   
   console.log('Redirecting to:', redirectUrl)
   
-  // URL to redirect to after sign in process completes
   return NextResponse.redirect(redirectUrl)
 } 

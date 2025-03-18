@@ -22,8 +22,8 @@ export function Header() {
   const { user, refreshData } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [mountedWithUser, setMountedWithUser] = useState(false);
 
   // Detect scroll to change header style
   useEffect(() => {
@@ -35,23 +35,38 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Check auth state on protected pages
+  // Forcibly refresh auth on dashboard page or when pathname changes
   useEffect(() => {
     const isProtectedPage = pathname === '/dashboard' || 
                            pathname.startsWith('/images/') || 
                            pathname.startsWith('/credits/');
     
-    if (isProtectedPage && !authChecked) {
-      console.log('Header - Protected page detected, refreshing auth state');
+    if (isProtectedPage) {
+      console.log('Header - Protected page detected, refreshing auth state immediately');
       refreshData();
-      setAuthChecked(true);
+      
+      // Additional refresh after a short delay for server sync
+      const timer = setTimeout(() => {
+        console.log('Header - Delayed auth refresh to ensure sync');
+        refreshData();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
     }
-  }, [pathname, authChecked, refreshData]);
+  }, [pathname, refreshData]);
 
-  // Reset authChecked state when path changes
+  // Update mountedWithUser state when user is loaded
   useEffect(() => {
-    setAuthChecked(false);
-  }, [pathname]);
+    if (user && !mountedWithUser) {
+      console.log('Header - User detected, updating mountedWithUser state');
+      setMountedWithUser(true);
+    }
+  }, [user, mountedWithUser]);
+
+  // Debug: log user state changes
+  useEffect(() => {
+    console.log('Header - User state changed:', user ? `User ${user.id} logged in` : 'No user');
+  }, [user]);
 
   // Prefetch common navigation targets
   useEffect(() => {
@@ -62,11 +77,6 @@ export function Header() {
       router.prefetch('/credits/purchase');
     }
   }, [user, router]);
-
-  // Debug: log user state changes
-  useEffect(() => {
-    console.log('Header - User state changed:', user ? `User ${user.id} logged in` : 'No user');
-  }, [user]);
 
   // Enhanced navigation handler with loading state
   const handleNavigation = (path: string) => {
@@ -158,7 +168,7 @@ export function Header() {
             </div>
           ) : (
             <div className="hidden md:flex items-center gap-4">
-              {user ? (
+              {user || (isDashboard || isGeneratePage || isCreditsPage) ? (
                 <>
                   <UserCredits />
                   <div className="flex items-center gap-2">
@@ -266,7 +276,7 @@ export function Header() {
               </div>
             ) : (
               <div className="flex flex-col space-y-3">
-                {user ? (
+                {user || (isDashboard || isGeneratePage || isCreditsPage) ? (
                   <>
                     <div className="py-2">
                       <UserCredits />

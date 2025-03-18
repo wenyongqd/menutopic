@@ -57,7 +57,7 @@ export function UserCredits() {
       
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('credits, credit_amount')
+        .select('credits')
         .eq('id', user.id)
         .single()
         
@@ -66,8 +66,8 @@ export function UserCredits() {
         throw error;
       }
       
-      // Check both possible field names for credits
-      const userCredits = data?.credits !== undefined ? data.credits : (data?.credit_amount || 0);
+      // 只使用credits字段
+      const userCredits = data?.credits || 0;
       console.log('UserCredits - Credits fetched:', userCredits, 'Raw data:', data);
       setCredits(userCredits)
       setIsLoading(false)
@@ -120,10 +120,8 @@ export function UserCredits() {
           // Add animation effect
           setIsUpdating(true)
           setTimeout(() => {
-            // Check which field exists in the payload
-            const newCredits = payload.new.credits !== undefined 
-              ? payload.new.credits 
-              : (payload.new.credit_amount || 0);
+            // 只使用payload中的credits字段
+            const newCredits = payload.new.credits || 0;
             setCredits(newCredits)
             setIsUpdating(false)
           }, 300)

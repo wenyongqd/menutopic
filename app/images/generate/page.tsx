@@ -115,17 +115,16 @@ export default function GenerateImagePage() {
         const supabase = createClient();
         const { data, error } = await supabase
           .from("user_profiles")
-          .select("*") // Select all fields to check which column exists
+          .select("credits") // 只选择credits字段
           .eq("id", user.id)
           .single();
 
         if (error) throw error;
 
-        // Check which field exists and use it
-        const credits =
-          data?.credits !== undefined ? data.credits : data?.credit_amount || 0;
-        console.log("GeneratePage - Credits fetched:", credits);
-        setUserCredits(credits);
+        // 只使用credits字段
+        const userCredits = data?.credits || 0;
+        console.log("GeneratePage - Credits fetched:", userCredits);
+        setUserCredits(userCredits);
       } catch (error) {
         console.error("GeneratePage - Failed to fetch credits:", error);
         toast({
@@ -256,10 +255,7 @@ export default function GenerateImagePage() {
               console.error("Failed to fetch updated credits:", error);
             } else {
               // Update the credits with the value from the database
-              const updatedCredits =
-                updatedProfile?.credits !== undefined
-                  ? updatedProfile.credits
-                  : updatedProfile?.credit_amount || 0;
+              const updatedCredits = updatedProfile?.credits || 0;
               setUserCredits(updatedCredits);
             }
           } else {
@@ -380,10 +376,7 @@ export default function GenerateImagePage() {
             console.error("Failed to fetch updated credits:", error);
           } else {
             // Update the credits with the value from the database
-            const updatedCredits =
-              updatedProfile?.credits !== undefined
-                ? updatedProfile.credits
-                : updatedProfile?.credit_amount || 0;
+            const updatedCredits = updatedProfile?.credits || 0;
             setUserCredits(updatedCredits);
           }
         } else {
@@ -545,10 +538,7 @@ export default function GenerateImagePage() {
             console.error("Failed to fetch updated credits:", error);
           } else {
             // Update the credits with the value from the database
-            const updatedCredits =
-              updatedProfile?.credits !== undefined
-                ? updatedProfile.credits
-                : updatedProfile?.credit_amount || 0;
+            const updatedCredits = updatedProfile?.credits || 0;
             setUserCredits(updatedCredits);
           }
         } else {

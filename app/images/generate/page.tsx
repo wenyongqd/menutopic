@@ -57,6 +57,23 @@ export default function GenerateImagePage() {
   const { toast } = useToast();
   const router = useRouter();
   const { user, refreshData } = useAuth();
+  
+  // Debug state
+  const [debugInfo, setDebugInfo] = useState<{
+    userId: string | null;
+    creditsRaw: number | null;
+    creditsProcessed: number;
+    fetchAttempts: number;
+    fetchSuccess: boolean;
+    error: string | null;
+  }>({
+    userId: null,
+    creditsRaw: null,
+    creditsProcessed: 0,
+    fetchAttempts: 0,
+    fetchSuccess: false,
+    error: null
+  });
 
   // 新增状态用于菜单上传功能
   const [activeTab, setActiveTab] = useState("prompt");
@@ -107,17 +124,41 @@ export default function GenerateImagePage() {
       if (!user) {
         console.log("GeneratePage - No user found, skipping credit fetch");
         setIsLoading(false);
+        setDebugInfo(prev => ({
+          ...prev,
+          fetchAttempts: prev.fetchAttempts + 1,
+          error: "No user found"
+        }));
         return;
       }
 
       console.log("GeneratePage - Fetching credits for user:", user.id);
+      setDebugInfo(prev => ({
+        ...prev,
+        userId: user.id,
+        fetchAttempts: prev.fetchAttempts + 1
+      }));
 
       try {
         const credits = await getUserCredits();
         console.log("GeneratePage - Credits fetched:", credits);
+        
+        setDebugInfo(prev => ({
+          ...prev,
+          creditsRaw: credits,
+          creditsProcessed: credits ?? 0,
+          fetchSuccess: true
+        }));
+        
         setUserCredits(credits ?? 0);
       } catch (error) {
         console.error("GeneratePage - Failed to fetch credits:", error);
+        setDebugInfo(prev => ({
+          ...prev,
+          error: error instanceof Error ? error.message : String(error),
+          fetchSuccess: false
+        }));
+        
         toast({
           title: "Error",
           description: "Failed to load your credit balance",
@@ -792,6 +833,21 @@ export default function GenerateImagePage() {
 
   return (
     <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
+      {/* Debug info - only visible during development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md mb-4">
+          <h3 className="font-bold mb-2">Debug Info</h3>
+          <pre className="text-xs overflow-auto max-h-40">
+            {JSON.stringify({
+              user: user ? { id: user.id, email: user.email } : null,
+              debug: debugInfo,
+              userCredits,
+              isLoading
+            }, null, 2)}
+          </pre>
+        </div>
+      )}
+
       <div className="flex flex-col items-center justify-between relative overflow-hidden py-12 px-4 rounded-2xl">
         <GradientBackground className="absolute inset-0 rounded-2xl opacity-70" />
 

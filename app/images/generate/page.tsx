@@ -58,23 +58,6 @@ export default function GenerateImagePage() {
   const router = useRouter();
   const { user, refreshData } = useAuth();
   
-  // Debug state
-  const [debugInfo, setDebugInfo] = useState<{
-    userId: string | null;
-    creditsRaw: number | null;
-    creditsProcessed: number;
-    fetchAttempts: number;
-    fetchSuccess: boolean;
-    error: string | null;
-  }>({
-    userId: null,
-    creditsRaw: null,
-    creditsProcessed: 0,
-    fetchAttempts: 0,
-    fetchSuccess: false,
-    error: null
-  });
-
   // 新增状态用于菜单上传功能
   const [activeTab, setActiveTab] = useState("prompt");
   const [menuUrl, setMenuUrl] = useState<string | undefined>(undefined);
@@ -105,59 +88,59 @@ export default function GenerateImagePage() {
     // 防止在数据加载时出现闪烁，先设置 isLoading 为 true
     setIsLoading(true);
     
-    // 使用超时确保即使数据加载失败也会结束加载状态
+    // 使用更长的超时确保认证完成
     const timeoutId = setTimeout(() => {
       if (isLoading) {
         console.log("GeneratePage - Timeout reached, force ending loading state");
         setIsLoading(false);
       }
-    }, 5000); // 5秒超时
+    }, 10000); // 延长到10秒超时
     
+    // 立即调用refreshData来获取认证状态
     refreshData();
     
     return () => clearTimeout(timeoutId);
   }, [refreshData]);
 
-  // Fetch user credits
+  // Fetch user credits with retry mechanism
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 3;
+    
     async function fetchUserCredits() {
       if (!user) {
-        console.log("GeneratePage - No user found, skipping credit fetch");
+        console.log(`GeneratePage - No user found (attempt ${retryCount + 1}/${maxRetries + 1}), ${retryCount < maxRetries ? "will retry" : "skipping credit fetch"}`);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          // 递增的延迟重试
+          const delay = 1000 * retryCount;
+          console.log(`GeneratePage - Will retry in ${delay}ms`);
+          setTimeout(fetchUserCredits, delay);
+          return;
+        }
+        
         setIsLoading(false);
-        setDebugInfo(prev => ({
-          ...prev,
-          fetchAttempts: prev.fetchAttempts + 1,
-          error: "No user found"
-        }));
         return;
       }
 
       console.log("GeneratePage - Fetching credits for user:", user.id);
-      setDebugInfo(prev => ({
-        ...prev,
-        userId: user.id,
-        fetchAttempts: prev.fetchAttempts + 1
-      }));
 
       try {
         const credits = await getUserCredits();
         console.log("GeneratePage - Credits fetched:", credits);
-        
-        setDebugInfo(prev => ({
-          ...prev,
-          creditsRaw: credits,
-          creditsProcessed: credits ?? 0,
-          fetchSuccess: true
-        }));
-        
         setUserCredits(credits ?? 0);
       } catch (error) {
         console.error("GeneratePage - Failed to fetch credits:", error);
-        setDebugInfo(prev => ({
-          ...prev,
-          error: error instanceof Error ? error.message : String(error),
-          fetchSuccess: false
-        }));
+        
+        // 尝试重试一次
+        if (retryCount < maxRetries) {
+          retryCount++;
+          const delay = 1000 * retryCount;
+          console.log(`GeneratePage - Fetch failed, will retry in ${delay}ms`);
+          setTimeout(fetchUserCredits, delay);
+          return;
+        }
         
         toast({
           title: "Error",
@@ -165,20 +148,19 @@ export default function GenerateImagePage() {
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        if (user || retryCount >= maxRetries) {
+          setIsLoading(false);
+        }
       }
     }
 
-    // 检查 user 是否已加载
-    if (user) {
-      console.log("GeneratePage - User detected, fetching credits");
+    // 只在user状态变化时重新获取积分
+    if (user || !isLoading) {
+      retryCount = 0; // 重置重试计数
+      console.log("GeneratePage - User detected or loading completed, fetching credits");
       fetchUserCredits();
-    } else if (!isLoading) {
-      // 如果已经完成加载但没有用户，可能是在等待认证
-      console.log("GeneratePage - Loading completed but no user found");
-      setIsLoading(false);
     }
-  }, [user, toast, isLoading]);
+  }, [user, toast]);
 
   // 预加载JSZip库
   useEffect(() => {
@@ -833,14 +815,12 @@ export default function GenerateImagePage() {
 
   return (
     <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
-      {/* Debug info - only visible during development */}
       {process.env.NODE_ENV === 'development' && (
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md mb-4">
           <h3 className="font-bold mb-2">Debug Info</h3>
           <pre className="text-xs overflow-auto max-h-40">
             {JSON.stringify({
               user: user ? { id: user.id, email: user.email } : null,
-              debug: debugInfo,
               userCredits,
               isLoading
             }, null, 2)}

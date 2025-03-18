@@ -34,14 +34,24 @@ export function UserCredits() {
     try {
       console.log('UserCredits - Fetching credits for user:', user?.id || 'unknown (protected path)');
       
-      // Add a small delay before fetching to ensure auth is properly initialized
+      // Add a longer delay before fetching to ensure auth is properly initialized
       if (retryCount === 0) {
-        await new Promise(r => setTimeout(r, 500));
+        console.log('UserCredits - Adding initial delay before fetch');
+        await new Promise(r => setTimeout(r, 1500)); // 延长到1.5秒等待
       }
       
-      // 如果没有用户但在保护路径上，显示临时状态
+      // 如果没有用户但在保护路径上，使用更耐心的重试策略
       if (!user && isProtectedPath) {
-        console.log('UserCredits - On protected path without user, showing temp state');
+        console.log(`UserCredits - On protected path without user (attempt ${retryCount + 1}/5), trying again`);
+        
+        if (retryCount < 4) { // 最多重试4次
+          setTimeout(() => {
+            fetchCredits(retryCount + 1)
+          }, 1000 * (retryCount + 1));
+          return;
+        }
+        
+        console.log('UserCredits - Max retries reached, showing temp state');
         setCredits(0);
         setIsLoading(false);
         return;
@@ -59,14 +69,23 @@ export function UserCredits() {
       const userCredits = await getUserCredits();
       console.log('UserCredits - Credits fetched:', userCredits);
       
+      // 如果 userCredits 为 null，尝试重试
+      if (userCredits === null && retryCount < 4) {
+        console.log(`UserCredits - Null credits returned, retrying (${retryCount + 1}/5)`);
+        setTimeout(() => {
+          fetchCredits(retryCount + 1)
+        }, 1000 * (retryCount + 1));
+        return;
+      }
+      
       // 如果 userCredits 为 null，则设为 0
       setCredits(userCredits ?? 0);
       setIsLoading(false);
     } catch (error) {
       console.error('UserCredits - Failed to fetch credits:', error)
       // If failed and still have retry attempts, wait and retry
-      if (retryCount < 3) {
-        console.log(`UserCredits - Retrying fetch (${retryCount + 1}/3) in ${1000 * (retryCount + 1)}ms`);
+      if (retryCount < 4) { // 最多重试4次
+        console.log(`UserCredits - Retrying fetch (${retryCount + 1}/5) in ${1000 * (retryCount + 1)}ms`);
         setTimeout(() => {
           fetchCredits(retryCount + 1)
         }, 1000 * (retryCount + 1)) // Gradually increase retry interval

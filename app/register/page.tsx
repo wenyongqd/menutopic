@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '@/components/providers/auth-provider'
@@ -19,8 +19,6 @@ function RegisterPageContent() {
   const [isLoading, setIsLoading] = useState(false)
   const { signUp } = useAuth()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectPath = searchParams.get('redirect') || '/dashboard'
   const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,10 +39,10 @@ function RegisterPageContent() {
       await signUp(email, password)
       toast({
         title: 'Registration successful',
-        description: 'Please check your email to confirm your account',
+        description: 'Please check your email to confirm your account. You will be able to login after confirming your email.',
         variant: 'success',
       })
-      router.push(redirectPath)
+      router.push('/login')
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Please try again later';
       toast({

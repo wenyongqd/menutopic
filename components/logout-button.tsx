@@ -31,20 +31,35 @@ export function LogoutButton({
     }
     
     setIsLoading(true);
+    
     try {
-      // 先使用客户端方法清除本地状态
-      await signOut();
+      console.log('LogoutButton - Starting logout process');
       
-      // 然后调用服务器操作进行登出
-      // 注意：由于已经在客户端清除了状态，这里可能不需要等待服务器操作完成
+      // 先使用客户端方法清除本地状态
+      await signOut().catch(err => {
+        console.error('Client signOut error:', err);
+      });
+      
+      console.log('LogoutButton - Client signOut completed');
+      
+      // 手动导航到登录页面，而不是等待服务器操作
+      // 这样可以避免页面停留在当前页面等待服务器响应
+      router.push('/login');
+      
+      // 设置超时自动重置状态，以防导航失败
+      setTimeout(() => {
+        if (isLoading) {
+          console.log('LogoutButton - Resetting loading state after timeout');
+          setIsLoading(false);
+        }
+      }, 3000);
+      
+      // 然后非阻塞式地调用服务器操作进行登出
       serverLogout().catch(error => {
         console.error("Error in server logout:", error);
       });
-      
-      // 手动导航到登录页面
-      router.push('/login');
     } catch (error) {
-      console.error("Error logging out:", error);
+      console.error("LogoutButton - Error logging out:", error);
       setIsLoading(false);
     }
   };

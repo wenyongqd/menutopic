@@ -17,22 +17,42 @@ export function UserCredits() {
   const pathname = usePathname();
   const router = useRouter();
   const isCreditsPage = pathname.startsWith("/credits");
+  // 检查是否在受保护路径上（dashboard, images, credits）
+  const isProtectedPath = pathname === '/dashboard' || 
+                          pathname.startsWith('/images/') || 
+                          pathname.startsWith('/credits/');
 
   // Improved fetchCredits function with better debugging
   const fetchCredits = async (retryCount = 0) => {
-    if (!user) {
-      console.log('UserCredits - No user found, skipping credits fetch');
+    if (!user && !isProtectedPath) {
+      console.log('UserCredits - No user found and not on protected path, skipping credits fetch');
       setIsLoading(false)
       return
     }
     
     try {
-      console.log('UserCredits - Fetching credits for user:', user.id);
+      console.log('UserCredits - Fetching credits for user:', user?.id || 'unknown (protected path)');
       const supabase = createClient();
       
       // Add a small delay before fetching to ensure auth is properly initialized
       if (retryCount === 0) {
         await new Promise(r => setTimeout(r, 500));
+      }
+      
+      // 如果没有用户但在保护路径上，显示临时状态
+      if (!user && isProtectedPath) {
+        console.log('UserCredits - On protected path without user, showing temp state');
+        setCredits(0);
+        setIsLoading(false);
+        return;
+      }
+      
+      // 确保user存在
+      if (!user) {
+        console.log('UserCredits - No user object available for fetching');
+        setCredits(0);
+        setIsLoading(false);
+        return;
       }
       
       const { data, error } = await supabase
@@ -71,12 +91,12 @@ export function UserCredits() {
   // Call fetchCredits when user changes
   useEffect(() => {
     console.log('UserCredits - User state changed, user:', user?.id);
-    if (user) {
+    if (user || isProtectedPath) {
       fetchCredits()
     } else {
       setIsLoading(false)
     }
-  }, [user])
+  }, [user, isProtectedPath])
   
   // Set up real-time listener for credit changes
   useEffect(() => {
@@ -138,7 +158,33 @@ export function UserCredits() {
     }
   }
   
+  // 在保护路径上即使在加载状态下也显示临时UI
   if (isLoading) {
+    // 如果在受保护路径上，显示临时的加载UI
+    if (isProtectedPath) {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-bg-200 text-text-100 px-3 py-1.5 rounded-full">
+            <CreditCard className="h-3.5 w-3.5 text-primary-100" />
+            <span className="font-medium text-sm">
+              <Loader2 className="h-3 w-3 inline animate-spin mr-1" />
+            </span>
+            <span className="text-xs text-text-200">credits</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={true}
+            className="flex items-center gap-1 text-text-200"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="text-sm">Buy</span>
+          </Button>
+        </div>
+      )
+    }
+    
+    // 否则默认加载状态
     return (
       <div className="flex items-center gap-1 text-sm text-text-200 animate-pulse">
         <Loader2 className="h-3 w-3 animate-spin" />
@@ -147,7 +193,8 @@ export function UserCredits() {
     )
   }
   
-  if (!user || credits === null) {
+  // 如果用户不存在且不在受保护路径上，不显示任何内容
+  if (!user && !isProtectedPath) {
     return null
   }
   

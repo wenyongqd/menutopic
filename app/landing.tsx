@@ -52,7 +52,7 @@ const features = [
 // Sample data for testimonials section
 const testimonials = [
   {
-    content: "PicMenu has completely changed how I order at restaurants. Being able to see dishes before ordering helps me make better choices.",
+    content: "MenuToPic has completely changed how I order at restaurants. Being able to see dishes before ordering helps me make better choices.",
     name: "Sarah Johnson",
     title: "Food Enthusiast",
     rating: 5
@@ -142,7 +142,7 @@ export default function LandingPage() {
                     alt="Menu visualization demo"
                     className="object-cover object-center w-full h-full transition-transform duration-700 group-hover:scale-105"
                     onError={(e) => {
-                      e.currentTarget.src = "https://placehold.co/800x550/e2e8f0/64748b?text=PicMenu+Demo";
+                      e.currentTarget.src = "https://placehold.co/800x550/e2e8f0/64748b?text=MenuToPic+Demo";
                     }}
                   />
                 </div>
@@ -210,7 +210,7 @@ export default function LandingPage() {
                 Simple Process
               </div>
               <h2 className="text-4xl font-bold tracking-tight text-text-100 md:text-5xl lg:text-6xl max-w-3xl">
-                How <span className="text-primary-100">PicMenu</span> Works
+                How <span className="text-primary-100">MenuToPic</span> Works
               </h2>
               <p className="mx-auto max-w-[700px] text-text-200 md:text-xl mt-6">
                 Our simple three-step process transforms any menu into a visual feast in seconds.
@@ -343,7 +343,7 @@ export default function LandingPage() {
                 What Our <span className="text-primary-100">Users</span> Say
               </h2>
               <p className="mx-auto max-w-[700px] text-text-200 md:text-xl mt-6">
-                Don&apos;t just take our word for it. Here&apos;s what people who use PicMenu have to say.
+                Don&apos;t just take our word for it. Here&apos;s what people who use MenuToPic have to say.
               </p>
             </div>
             
@@ -402,7 +402,7 @@ export default function LandingPage() {
                 Frequently Asked <span className="text-primary-100">Questions</span>
               </h2>
               <p className="mx-auto max-w-[700px] text-text-200 md:text-xl mt-6">
-                Find answers to common questions about PicMenu.
+                Find answers to common questions about MenuToPic.
               </p>
             </div>
             
@@ -413,20 +413,20 @@ export default function LandingPage() {
                   answer: "Our AI generates representative images based on dish names and descriptions. While they provide a good visual reference, they may not exactly match the actual dish at a specific restaurant."
                 },
                 {
-                  question: "Can I use PicMenu for any type of menu?",
-                  answer: "Yes! PicMenu works with restaurant menus, café menus, bar menus, and more. Our AI is trained to recognize a wide variety of food and beverage items."
+                  question: "Can I use MenuToPic for any type of menu?",
+                  answer: "Yes! MenuToPic works with restaurant menus, café menus, bar menus, and more. Our AI is trained to recognize a wide variety of food and beverage items."
                 },
                 {
-                  question: "Is PicMenu free to use?",
-                  answer: "Yes, PicMenu is completely free to use, powered by Together AI technology."
+                  question: "Is MenuToPic free to use?",
+                  answer: "Yes, MenuToPic is completely free to use, powered by Together AI technology."
                 },
                 {
                   question: "How do I download images?",
                   answer: "You can download individual dish images by clicking the download button on each item, or download all images at once using the 'Download All' button."
                 },
                 {
-                  question: "Can I use PicMenu on my mobile device?",
-                  answer: "Absolutely! PicMenu is fully responsive and works great on smartphones and tablets. You can take a photo directly with your device's camera."
+                  question: "Can I use MenuToPic on my mobile device?",
+                  answer: "Absolutely! MenuToPic is fully responsive and works great on smartphones and tablets. You can take a photo directly with your device's camera."
                 }
               ].map((item, index) => (
                 <div 
@@ -468,7 +468,7 @@ export default function LandingPage() {
                   Ready to Visualize Your Menu?
                 </h2>
                 <p className="mx-auto max-w-[700px] text-white/90 md:text-xl lg:text-2xl leading-relaxed">
-                  Transform any menu into a visual feast with just a photo. Try PicMenu today!
+                  Transform any menu into a visual feast with just a photo. Try MenuToPic today!
                 </p>
               </div>
               
@@ -480,7 +480,7 @@ export default function LandingPage() {
                   Try It Now <ArrowRight className="h-5 w-5 ml-1" />
                 </Link>
                 <Link
-                  href="https://github.com/Nutlope/picmenu"
+                  href="https://github.com/Nutlope/MenuToPic"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-full border-2 border-white/40 bg-transparent px-8 py-4 text-lg font-medium text-white hover:bg-white/10 transition-all hover:border-white/60"

@@ -32,7 +32,7 @@ export function Footer() {
           </div>
           <div className="flex space-x-4">
             <a
-              href="https://github.com/Nutlope/picmenu"
+              href="https://github.com/Nutlope/MenuToPic"
               target="_blank"
               rel="noopener noreferrer"
               className="text-text-200 hover:text-primary-100 transition-colors"
@@ -66,7 +66,7 @@ export function Footer() {
             <Link href="#how-it-works" className="hover:text-primary-100">How It Works</Link>
             <Link href="#faq" className="hover:text-primary-100">FAQ</Link>
           </div>
-          <p className="mt-4">© {new Date().getFullYear()} PicMenu. All rights reserved.</p>
+          <p className="mt-4">© {new Date().getFullYear()} MenuToPic. All rights reserved.</p>
         </div>
       </div>
     </footer>

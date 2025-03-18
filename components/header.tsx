@@ -167,7 +167,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
               <span className="absolute inset-0 rounded-lg bg-primary-100/10 scale-0 transition-transform group-hover:scale-100"></span>
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-primary-100 to-primary-300 bg-clip-text text-transparent">
-              MenuMuse
+              MenuToPic
             </span>
           </Link>
           
@@ -279,7 +279,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                   </Button>
                   <a
                     className="flex max-w-fit items-center justify-center space-x-2 rounded-full border border-bg-300 bg-bg-100 px-4 py-2 text-sm text-text-200 shadow-sm transition-all hover:bg-bg-200 hover:shadow"
-                    href="https://github.com/Nutlope/picmenu"
+                    href="https://github.com/Nutlope/MenuToPic"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -398,7 +398,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                     </Button>
                     <a
                       className="flex items-center justify-center space-x-2 rounded-full border border-bg-300 bg-bg-100 px-4 py-2 text-sm text-text-200 hover:bg-bg-200"
-                      href="https://github.com/Nutlope/picmenu"
+                      href="https://github.com/Nutlope/MenuToPic"
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setIsMobileMenuOpen(false)}

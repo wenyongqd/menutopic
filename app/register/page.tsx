@@ -70,7 +70,7 @@ function RegisterPageContent() {
         />
         <div className="absolute inset-0 flex flex-col justify-center items-start z-20 p-12">
           <div className="animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-            <h1 className="text-4xl font-bold text-white mb-4">PicMenu</h1>
+            <h1 className="text-4xl font-bold text-white mb-4">MenuToPic</h1>
             <div className="h-1 w-20 bg-accent-100 mb-6 rounded-full"></div>
             <p className="text-xl text-white/90 max-w-md leading-relaxed">
               Join today and transform your menu with beautiful AI-generated food images
@@ -117,7 +117,7 @@ function RegisterPageContent() {
       <div className="w-full md:w-1/2 flex justify-center items-center p-6 bg-gradient-to-b from-bg-100 to-bg-200/50">
         <div className="w-full max-w-md animate-fade-in-up">
           <div className="mb-8 text-center md:hidden">
-            <h1 className="text-3xl font-bold text-text-100 mb-2">PicMenu</h1>
+            <h1 className="text-3xl font-bold text-text-100 mb-2">MenuToPic</h1>
             <p className="text-text-200">Create your account</p>
           </div>
           
@@ -221,7 +221,7 @@ function RegisterPageContent() {
           </Card>
           
           <div className="mt-8 text-center text-text-200 text-xs">
-            <p>© {new Date().getFullYear()} PicMenu. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} MenuToPic. All rights reserved.</p>
           </div>
         </div>
       </div>

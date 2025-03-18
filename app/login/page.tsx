@@ -79,7 +79,7 @@ function LoginPageContent() {
         />
         <div className="absolute inset-0 flex flex-col justify-center items-start z-20 p-12">
           <div className="animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-            <h1 className="text-4xl font-bold text-white mb-4">PicMenu</h1>
+            <h1 className="text-4xl font-bold text-white mb-4">MenuToPic</h1>
             <div className="h-1 w-20 bg-primary-100 mb-6 rounded-full"></div>
             <p className="text-xl text-white/90 max-w-md leading-relaxed">
               Create stunning menu images with AI to showcase your culinary creations
@@ -88,7 +88,7 @@ function LoginPageContent() {
           
           <div className="mt-12 bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/20 max-w-md animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
             <p className="text-white/90 italic text-sm mb-4">
-            &apos;PicMenu transformed our restaurant&apos;s online presence. The AI-generated images look professional and appetizing!&apos;
+            &apos;MenuToPic transformed our restaurant&apos;s online presence. The AI-generated images look professional and appetizing!&apos;
             </p>
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-white font-bold">
@@ -112,7 +112,7 @@ function LoginPageContent() {
       <div className="w-full md:w-1/2 flex justify-center items-center p-6 bg-gradient-to-b from-bg-100 to-bg-200/50">
         <div className="w-full max-w-md animate-fade-in-up">
           <div className="mb-8 text-center md:hidden">
-            <h1 className="text-3xl font-bold text-text-100 mb-2">PicMenu</h1>
+            <h1 className="text-3xl font-bold text-text-100 mb-2">MenuToPic</h1>
             <p className="text-text-200">Sign in to your account</p>
           </div>
           
@@ -197,7 +197,7 @@ function LoginPageContent() {
           </Card>
           
           <div className="mt-8 text-center text-text-200 text-xs">
-            <p>© {new Date().getFullYear()} PicMenu. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} MenuToPic. All rights reserved.</p>
           </div>
         </div>
       </div>

@@ -12,7 +12,11 @@ import { Menu, X, User, Home, Image, CreditCard } from "lucide-react";
 import { LogoutButton } from "@/components/logout-button";
 import { getUserCredits } from "@/lib/supabase";
 
-export function Header() {
+interface ClientHeaderProps {
+  initialCredits?: number;
+}
+
+export function ClientHeader({ initialCredits }: ClientHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const isLandingPage = pathname === "/landing";
@@ -25,7 +29,7 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [mountedWithUser, setMountedWithUser] = useState(false);
-  const [serverCredits, setServerCredits] = useState<number | undefined>(undefined);
+  const [serverCredits, setServerCredits] = useState<number | undefined>(initialCredits);
 
   // Detect scroll to change header style
   useEffect(() => {
@@ -37,23 +41,23 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 在客户端获取用户积分，确保header中显示正确的积分值
+  // 只有在没有初始积分的情况下才从客户端获取积分
   useEffect(() => {
     async function fetchInitialCredits() {
-      if (user) {
+      if (user && initialCredits === undefined) {
         try {
           const credits = await getUserCredits();
           setServerCredits(credits ?? 0);
-          console.log('Header - Initial credits fetched:', credits);
+          console.log('Header - Credits fetched from client:', credits);
         } catch (error) {
-          console.error('Header - Failed to fetch initial credits:', error);
+          console.error('Header - Failed to fetch credits from client:', error);
           setServerCredits(0);
         }
       }
     }
     
     fetchInitialCredits();
-  }, [user]);
+  }, [user, initialCredits]);
 
   // Forcibly refresh auth on dashboard page or when pathname changes
   useEffect(() => {
@@ -86,7 +90,10 @@ export function Header() {
   // Debug: log user state changes
   useEffect(() => {
     console.log('Header - User state changed:', user ? `User ${user.id} logged in` : 'No user');
-  }, [user]);
+    if (initialCredits !== undefined) {
+      console.log('Header - Using server provided credits:', initialCredits);
+    }
+  }, [user, initialCredits]);
 
   // Prefetch common navigation targets
   useEffect(() => {

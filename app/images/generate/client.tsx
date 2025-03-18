@@ -21,7 +21,10 @@ import * as Bytescale from "@bytescale/sdk";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MenuGrid } from "@/components/menu-grid";
 import { PhotoIcon } from "@heroicons/react/20/solid";
-import { ArrowDownTrayIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowDownTrayIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
 import {
   Image as ImageIcon,
   Sparkles,
@@ -38,6 +41,7 @@ import { GradientBackground } from "@/components/gradient-background";
 import { motion } from "framer-motion";
 import { MenuItem } from "./types";
 import Dropzone from "react-dropzone";
+import { AnimatedTitle } from "@/components/animated-title";
 
 interface GenerateClientProps {
   user: User;
@@ -792,21 +796,23 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         </motion.div>
 
         <div className="relative z-10 w-full">
-          <div className="text-4xl md:text-6xl font-bold text-text-100 mb-6 text-center">
-            Visualize your menu with AI
-          </div>
-          <p className="text-lg text-text-200 max-w-3xl mx-auto text-balance text-center">
-            Take a picture of your menu and get pictures of each dish so you can better decide what to order, or generate individual dish images from descriptions.
-          </p>
+          <AnimatedTitle
+            title="Visualize your menu with AI"
+            titleClassName="text-4xl md:text-6xl font-bold text-text-100 mb-6"
+            subtitle="Take a picture of your menu and get pictures of each dish so you can better decide what to order, or generate individual dish images from descriptions."
+            subtitleClassName="text-lg text-text-200 max-w-3xl mx-auto text-balance"
+          />
         </div>
       </div>
 
       <div className="fade-in" style={{ animationDelay: "0.1s" }}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList
+            variant="pills"
             className="grid w-full grid-cols-2 mb-6 bg-bg-200"
           >
             <TabsTrigger
+              variant="pills"
               value="prompt"
               className="flex items-center gap-2"
             >
@@ -814,6 +820,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
               <span>Generate from Prompt</span>
             </TabsTrigger>
             <TabsTrigger
+              variant="pills"
               value="upload"
               className="flex items-center gap-2"
             >
@@ -1636,4 +1643,4 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       </div>
     </div>
   );
-} 
+}

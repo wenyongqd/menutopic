@@ -1,4 +1,4 @@
-import { MenuItem } from "@/app/images/generate/page";
+import { MenuItem } from "@/app/images/generate/types";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { ArrowDownTrayIcon, ArrowPathIcon } from "@heroicons/react/24/outline";

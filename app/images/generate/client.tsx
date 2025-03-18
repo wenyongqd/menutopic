@@ -35,16 +35,7 @@ import {
 } from "lucide-react";
 import { GradientBackground } from "@/components/gradient-background";
 import { motion } from "framer-motion";
-
-// 菜单项接口
-export interface MenuItem {
-  name: string;
-  price: string;
-  description: string;
-  menuImage: {
-    b64_json: string;
-  };
-}
+import { MenuItem } from "./types";
 
 interface GenerateClientProps {
   user: User;

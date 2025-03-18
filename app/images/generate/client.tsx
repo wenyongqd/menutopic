@@ -85,6 +85,56 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     refreshData();
   }, [refreshData]);
 
+  // 添加日志监听器，捕获生成的图像URL
+  useEffect(() => {
+    // 原始的console.log方法
+    const originalConsoleLog = console.log;
+    
+    // 覆盖console.log方法
+    console.log = function(...args) {
+      // 调用原始方法
+      originalConsoleLog.apply(console, args);
+      
+      // 检查日志中是否包含上传成功的图像URL
+      const logString = args.join(' ');
+      
+      // 检查是否包含Bytescale URL或其他图像URL
+      if (
+        (typeof logString === 'string' && 
+         (logString.includes('Image uploaded to Bytescale:') || 
+          logString.includes('https://upcdn.io/'))) ||
+        (args.length > 1 && 
+         typeof args[0] === 'string' && 
+         args[0].includes('uploaded') && 
+         typeof args[1] === 'string' && 
+         (args[1].includes('https://') || args[1].includes('data:image/')))
+      ) {
+        // 从日志中提取URL
+        let url = '';
+        
+        if (logString.includes('Image uploaded to Bytescale:')) {
+          url = logString.split('Image uploaded to Bytescale:')[1].trim();
+        } else if (logString.includes('https://upcdn.io/')) {
+          const match = logString.match(/(https:\/\/upcdn\.io\/[^\s"']+)/);
+          if (match && match[1]) {
+            url = match[1];
+          }
+        }
+        
+        if (url) {
+          originalConsoleLog('Captured image URL from logs:', url);
+          // 保存到sessionStorage
+          window.sessionStorage.setItem('last_generated_image_url', url);
+        }
+      }
+    };
+    
+    // 清理函数
+    return () => {
+      console.log = originalConsoleLog;
+    };
+  }, []);
+
   // 预加载JSZip库
   useEffect(() => {
     const preloadJSZip = async () => {
@@ -449,8 +499,28 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
 
     setIsGenerating(true);
     setGeneratedImage(null);
+    
+    // 设置一个超时检查，如果15秒后仍在生成状态，尝试恢复
+    const timeoutId = setTimeout(() => {
+      if (isGenerating) {
+        console.log("Generation timeout reached, attempting auto-recovery");
+        const loggedUrl = window.sessionStorage.getItem("last_generated_image_url");
+        if (loggedUrl) {
+          console.log("Auto-recovery: Using URL from logs:", loggedUrl);
+          setGeneratedImage(loggedUrl);
+          setIsGenerating(false);
+          setShowConfirmation(true);
+          toast({
+            title: "Image recovered",
+            description: "Your image was generated but not displayed. It has been recovered.",
+            variant: "success",
+          });
+        }
+      }
+    }, 15000);
 
     try {
+      console.log("Starting image generation with prompt:", prompt.substring(0, 50) + "...");
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: {
@@ -464,10 +534,16 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         throw new Error(errorData.message || "Failed to generate image");
       }
 
+      console.log("Received successful response from API");
+      // 获取响应文本以进行调试
+      const responseText = await response.text();
+      console.log("Raw API response:", responseText.substring(0, 100) + "...");
+      
       let data;
       try {
-        data = await response.json();
-        console.log("Image generation API response data:", data);
+        // 将文本解析为JSON
+        data = JSON.parse(responseText);
+        console.log("Image generation API response data keys:", Object.keys(data));
       } catch (jsonError) {
         console.error("Error parsing JSON response:", jsonError);
         throw new Error("Invalid response format from server");
@@ -491,6 +567,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                 ? updatedProfile.credits
                 : updatedProfile?.credit_amount || 0;
             setUserCredits(updatedCredits);
+            console.log("Updated user credits to:", updatedCredits);
           }
         } else {
           console.error("User not found when trying to fetch updated credits");
@@ -506,11 +583,21 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       // 处理图像 URL 或 base64 数据
       let imageUrl;
 
+      console.log("Processing image data structure:", {
+        hasImage: !!data.image,
+        hasB64Json: data.image?.b64_json ? "yes" : "no",
+        hasImageUrl: !!data.imageUrl,
+        imageUrlType: data.imageUrl ? typeof data.imageUrl : "none",
+        hasSuccess: !!data.success,
+        hasImageId: !!data.imageId
+      });
+
       // Check if the response is from the main API or the secondary API
       if (data.image && data.image.b64_json) {
         // Response from main API (same as main page)
         console.log("Processing response from main API");
         imageUrl = `data:image/png;base64,${data.image.b64_json}`;
+        console.log("Created image URL from b64_json");
 
         // Add the new item to the parsed menu (like in the main page)
         setParsedMenu((prev) => [
@@ -524,7 +611,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         ]);
       } else if (data.imageUrl) {
         // Response from secondary API or main API with imageUrl field
-        console.log("Processing response with imageUrl:", data.imageUrl);
+        console.log("Processing response with imageUrl:", data.imageUrl.substring(0, 50) + "...");
         imageUrl = data.imageUrl;
 
         // If it's base64 data without a prefix, add the prefix
@@ -534,6 +621,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
           !imageUrl.startsWith("data:")
         ) {
           imageUrl = `data:image/png;base64,${imageUrl}`;
+          console.log("Added data URL prefix to imageUrl");
         }
 
         // If we also have image data in the response, add it to the parsed menu
@@ -550,7 +638,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         }
       } else if (data.success && data.imageId) {
         // Response from the /api/images/generate endpoint
-        console.log("Processing response from /api/images/generate endpoint");
+        console.log("Processing response from /api/images/generate endpoint with imageId:", data.imageId);
 
         // Try to fetch the image from the database
         try {
@@ -567,32 +655,52 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
 
           if (imageData && imageData.image_url) {
             imageUrl = imageData.image_url;
-            console.log("Retrieved image URL from database:", imageUrl);
+            console.log("Retrieved image URL from database:", imageUrl.substring(0, 50) + "...");
 
             // 验证图片是否成功保存到数据库
             await verifyImageSaved(data.imageId);
           } else {
             console.error("No image URL found in database");
             imageUrl = data.imageUrl; // 使用API返回的URL作为备用
+            console.log("Using fallback imageUrl:", imageUrl ? imageUrl.substring(0, 50) + "..." : "undefined");
           }
         } catch (dbError) {
           console.error("Database error:", dbError);
           imageUrl = data.imageUrl; // 使用API返回的URL作为备用
+          console.log("Using fallback imageUrl due to DB error:", imageUrl ? imageUrl.substring(0, 50) + "..." : "undefined");
+        }
+      } else {
+        // 尝试从日志中看到的URL直接使用
+        console.log("No standard image data found, checking for direct URLs in log");
+        if (data.url) {
+          imageUrl = data.url;
+          console.log("Found direct URL in response:", imageUrl.substring(0, 50) + "...");
+        } else if (data.b64_json) {
+          imageUrl = `data:image/png;base64,${data.b64_json}`;
+          console.log("Found direct base64 data in response");
         }
       }
 
       // Set the image URL in state
       if (imageUrl) {
+        console.log("Setting generatedImage to:", imageUrl.substring(0, 50) + "...");
         setGeneratedImage(imageUrl);
+        setIsGenerating(false); // 确保状态被更新
+        setShowConfirmation(true); // 显示成功确认
+        
         toast({
           title: "Success",
           description: "Image generated successfully!",
         });
       } else {
+        console.error("No image URL could be determined from the response");
         throw new Error("No image URL found in response");
       }
     } catch (error) {
       console.error("Error generating image:", error);
+      // 确保错误情况下也重置生成状态
+      setIsGenerating(false);
+      
       toast({
         title: "Error",
         description:
@@ -600,7 +708,22 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         variant: "destructive",
       });
     } finally {
+      // 清除超时检查
+      clearTimeout(timeoutId);
+      
+      // 确保无论如何都重置生成状态
+      console.log("Finally block: resetting generating state");
       setIsGenerating(false);
+      
+      // 如果到这一步还没有图像URL但有日志显示图像已上传，尝试使用该URL
+      if (!generatedImage) {
+        const loggedUrl = window.sessionStorage.getItem("last_generated_image_url");
+        if (loggedUrl) {
+          console.log("Using URL from logs:", loggedUrl);
+          setGeneratedImage(loggedUrl);
+          setShowConfirmation(true);
+        }
+      }
     }
   };
 
@@ -917,6 +1040,44 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                             <>
                               <div className="h-5 w-5 rounded-full border-2 border-t-transparent border-white animate-spin mr-2"></div>
                               Generating Your Image...
+                              {/* 添加重试按钮 - 如果生成时间过长 */}
+                              {isGenerating && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // 防止触发父级按钮事件
+                                    // 显示一个正在重置的状态
+                                    toast({
+                                      title: "Resetting...",
+                                      description: "Attempting to recover the generated image",
+                                    });
+                                    
+                                    // 尝试从日志中恢复URL
+                                    const loggedUrl = window.sessionStorage.getItem("last_generated_image_url");
+                                    if (loggedUrl) {
+                                      console.log("Manual recovery: Using URL from logs:", loggedUrl);
+                                      setGeneratedImage(loggedUrl);
+                                      setIsGenerating(false);
+                                      setShowConfirmation(true);
+                                      toast({
+                                        title: "Recovery successful",
+                                        description: "Generated image has been retrieved",
+                                        variant: "success",
+                                      });
+                                    } else {
+                                      // 简单重置状态
+                                      setIsGenerating(false);
+                                      toast({
+                                        title: "Generation reset",
+                                        description: "Please try generating again",
+                                      });
+                                    }
+                                  }}
+                                  className="ml-2 text-xs underline hover:text-white/80"
+                                  title="Image is taking too long? Click to try to recover it"
+                                >
+                                  stuck?
+                                </button>
+                              )}
                             </>
                           ) : (
                             <>

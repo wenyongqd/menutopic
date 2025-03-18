@@ -23,8 +23,9 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
-  // 检测滚动以更改 header 样式
+  // Detect scroll to change header style
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -34,7 +35,7 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 在受保护页面上检查认证状态
+  // Check auth state on protected pages
   useEffect(() => {
     const isProtectedPage = pathname === '/dashboard' || 
                            pathname.startsWith('/images/') || 
@@ -47,15 +48,44 @@ export function Header() {
     }
   }, [pathname, authChecked, refreshData]);
 
-  // 当路径变化时重置authChecked状态
+  // Reset authChecked state when path changes
   useEffect(() => {
     setAuthChecked(false);
   }, [pathname]);
 
-  // 调试用：记录用户状态变化
+  // Prefetch common navigation targets
+  useEffect(() => {
+    if (user) {
+      // Prefetch these routes to eliminate loading time
+      router.prefetch('/dashboard');
+      router.prefetch('/images/generate');
+      router.prefetch('/credits/purchase');
+    }
+  }, [user, router]);
+
+  // Debug: log user state changes
   useEffect(() => {
     console.log('Header - User state changed:', user ? `User ${user.id} logged in` : 'No user');
   }, [user]);
+
+  // Enhanced navigation handler with loading state
+  const handleNavigation = (path: string) => {
+    setIsNavigating(true);
+    console.log(`Header - Navigating to ${path}`);
+    
+    // Close mobile menu if open
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+    
+    // Navigate to the requested path
+    router.push(path);
+    
+    // Reset navigation state after a delay
+    setTimeout(() => {
+      setIsNavigating(false);
+    }, 1000);
+  };
 
   return (
     <header 
@@ -71,7 +101,7 @@ export function Header() {
             href={user ? "/dashboard" : "/"} 
             className="flex items-center space-x-2 group"
             onClick={(e) => {
-              // 如果用户已登出，确保导航到首页
+              // If user is logged out, ensure navigation to homepage
               if (!user) {
                 e.preventDefault();
                 console.log('Header - User is logged out, navigating to homepage');
@@ -88,7 +118,7 @@ export function Header() {
             </span>
           </Link>
           
-          {/* 移动端菜单按钮 */}
+          {/* Mobile menu button */}
           <div className="md:hidden">
             <Button 
               variant="ghost" 
@@ -132,34 +162,34 @@ export function Header() {
                 <>
                   <UserCredits />
                   <div className="flex items-center gap-2">
-                    <Link href="/dashboard">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className={`flex items-center gap-1 ${
-                          isDashboard 
-                            ? "bg-primary-100/10 text-primary-100" 
-                            : "hover:bg-bg-200"
-                        }`}
-                      >
-                        <Home className={`h-4 w-4 ${isDashboard ? "text-primary-100" : ""}`} />
-                        <span>Dashboard</span>
-                      </Button>
-                    </Link>
-                    <Link href="/images/generate">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className={`flex items-center gap-1 ${
-                          isGeneratePage 
-                            ? "bg-primary-100/10 text-primary-100" 
-                            : "hover:bg-bg-200"
-                        }`}
-                      >
-                        <Image className={`h-4 w-4 ${isGeneratePage ? "text-primary-100" : ""}`} />
-                        <span>Generate</span>
-                      </Button>
-                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className={`flex items-center gap-1 ${
+                        isDashboard 
+                          ? "bg-primary-100/10 text-primary-100" 
+                          : "hover:bg-bg-200"
+                      }`}
+                      onClick={() => handleNavigation('/dashboard')}
+                      disabled={isNavigating || isDashboard}
+                    >
+                      <Home className={`h-4 w-4 ${isDashboard ? "text-primary-100" : ""}`} />
+                      <span>Dashboard</span>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className={`flex items-center gap-1 ${
+                        isGeneratePage 
+                          ? "bg-primary-100/10 text-primary-100" 
+                          : "hover:bg-bg-200"
+                      }`}
+                      onClick={() => handleNavigation('/images/generate')}
+                      disabled={isNavigating || isGeneratePage}
+                    >
+                      <Image className={`h-4 w-4 ${isGeneratePage ? "text-primary-100" : ""}`} />
+                      <span>Generate</span>
+                    </Button>
                     <LogoutButton 
                       variant="ghost" 
                       size="sm"
@@ -175,11 +205,12 @@ export function Header() {
                     className="hover:bg-bg-200"
                     onClick={() => {
                       console.log('Header - Sign In button clicked, refreshing auth state before navigation');
-                      refreshData(); // 尝试刷新认证状态
+                      refreshData(); // Try to refresh auth state
                       if (!user) {
-                        router.push('/login');
+                        handleNavigation('/login');
                       }
                     }}
+                    disabled={isNavigating}
                   >
                     Sign In
                   </Button>
@@ -187,8 +218,9 @@ export function Header() {
                     size="sm" 
                     className="bg-primary-100 hover:bg-primary-200"
                     onClick={() => {
-                      router.push('/register');
+                      handleNavigation('/register');
                     }}
+                    disabled={isNavigating}
                   >
                     Sign Up
                   </Button>
@@ -207,7 +239,7 @@ export function Header() {
           )}
         </div>
         
-        {/* 移动端菜单 */}
+        {/* Mobile menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden mt-4 py-4 border-t border-bg-300 animate-fadeIn">
             {isLandingPage ? (
@@ -239,42 +271,45 @@ export function Header() {
                     <div className="py-2">
                       <UserCredits />
                     </div>
-                    <Link 
-                      href="/dashboard" 
-                      className={`flex items-center space-x-2 py-2 ${
+                    <Button 
+                      className={`flex items-center space-x-2 py-2 justify-start ${
                         isDashboard 
                           ? "text-primary-100" 
                           : "text-text-200 hover:text-primary-100"
                       }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      variant="ghost"
+                      onClick={() => handleNavigation('/dashboard')}
+                      disabled={isNavigating || isDashboard}
                     >
                       <Home className={`h-5 w-5 ${isDashboard ? "text-primary-100" : ""}`} />
                       <span>Dashboard</span>
-                    </Link>
-                    <Link 
-                      href="/images/generate" 
-                      className={`flex items-center space-x-2 py-2 ${
+                    </Button>
+                    <Button 
+                      className={`flex items-center space-x-2 py-2 justify-start ${
                         isGeneratePage 
                           ? "text-primary-100" 
                           : "text-text-200 hover:text-primary-100"
                       }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      variant="ghost"
+                      onClick={() => handleNavigation('/images/generate')}
+                      disabled={isNavigating || isGeneratePage}
                     >
                       <Image className={`h-5 w-5 ${isGeneratePage ? "text-primary-100" : ""}`} />
                       <span>Generate Images</span>
-                    </Link>
-                    <Link 
-                      href="/credits/purchase" 
-                      className={`flex items-center space-x-2 py-2 ${
+                    </Button>
+                    <Button 
+                      className={`flex items-center space-x-2 py-2 justify-start ${
                         isCreditsPage 
                           ? "text-primary-100" 
                           : "text-text-200 hover:text-primary-100"
                       }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      variant="ghost"
+                      onClick={() => handleNavigation('/credits/purchase')}
+                      disabled={isNavigating || isCreditsPage}
                     >
                       <CreditCard className={`h-5 w-5 ${isCreditsPage ? "text-primary-100" : ""}`} />
                       <span>Buy Credits</span>
-                    </Link>
+                    </Button>
                     <div className="py-2">
                       <LogoutButton 
                         variant="ghost"
@@ -291,8 +326,9 @@ export function Header() {
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         refreshData();
-                        router.push('/login');
+                        handleNavigation('/login');
                       }}
+                      disabled={isNavigating}
                     >
                       <User className="h-5 w-5" />
                       <span>Sign In</span>
@@ -301,8 +337,9 @@ export function Header() {
                       className="w-full inline-flex items-center justify-center rounded-md bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors"
                       onClick={() => {
                         setIsMobileMenuOpen(false);
-                        router.push('/register');
+                        handleNavigation('/register');
                       }}
+                      disabled={isNavigating}
                     >
                       Sign Up
                     </Button>

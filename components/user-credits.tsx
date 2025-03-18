@@ -18,9 +18,10 @@ export function UserCredits() {
   const router = useRouter();
   const isCreditsPage = pathname.startsWith("/credits");
 
-  // 添加重试逻辑
+  // Improved fetchCredits function with better debugging
   const fetchCredits = async (retryCount = 0) => {
     if (!user) {
+      console.log('UserCredits - No user found, skipping credits fetch');
       setIsLoading(false)
       return
     }
@@ -28,39 +29,60 @@ export function UserCredits() {
     try {
       console.log('UserCredits - Fetching credits for user:', user.id);
       const supabase = createClient();
+      
+      // Add a small delay before fetching to ensure auth is properly initialized
+      if (retryCount === 0) {
+        await new Promise(r => setTimeout(r, 500));
+      }
+      
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('*')
+        .select('credits, credit_amount')
         .eq('id', user.id)
         .single()
         
-      if (error) throw error
+      if (error) {
+        console.error('UserCredits - Error fetching credits:', error);
+        throw error;
+      }
       
+      // Check both possible field names for credits
       const userCredits = data?.credits !== undefined ? data.credits : (data?.credit_amount || 0);
-      console.log('UserCredits - Credits fetched:', userCredits);
+      console.log('UserCredits - Credits fetched:', userCredits, 'Raw data:', data);
       setCredits(userCredits)
       setIsLoading(false)
     } catch (error) {
-      console.error('Failed to fetch credits', error)
-      // 如果失败且还有重试次数，则等待后重试
+      console.error('UserCredits - Failed to fetch credits:', error)
+      // If failed and still have retry attempts, wait and retry
       if (retryCount < 3) {
+        console.log(`UserCredits - Retrying fetch (${retryCount + 1}/3) in ${1000 * (retryCount + 1)}ms`);
         setTimeout(() => {
           fetchCredits(retryCount + 1)
-        }, 1000 * (retryCount + 1)) // 逐步增加重试间隔
+        }, 1000 * (retryCount + 1)) // Gradually increase retry interval
       } else {
+        console.log('UserCredits - Max retries reached, setting default credits');
+        // Set default credits to 0 after max retries to avoid perpetual loading state
+        setCredits(0)
         setIsLoading(false)
       }
     }
   }
 
-  // 当用户状态变化时重新获取积分
+  // Call fetchCredits when user changes
   useEffect(() => {
+    console.log('UserCredits - User state changed, user:', user?.id);
     if (user) {
       fetchCredits()
+    } else {
+      setIsLoading(false)
     }
   }, [user])
   
+  // Set up real-time listener for credit changes
   useEffect(() => {
+    console.log('UserCredits - Setting up realtime subscription');
+    
+    // Always attempt to fetch on initial mount
     fetchCredits()
     
     // Set up real-time subscription for credit changes
@@ -74,7 +96,8 @@ export function UserCredits() {
           table: 'user_profiles',
           filter: `id=eq.${user.id}`,
         }, (payload) => {
-          // 添加动画效果
+          console.log('UserCredits - Profile update received:', payload);
+          // Add animation effect
           setIsUpdating(true)
           setTimeout(() => {
             // Check which field exists in the payload
@@ -88,22 +111,23 @@ export function UserCredits() {
         .subscribe()
         
       return () => {
+        console.log('UserCredits - Cleaning up realtime subscription');
         supabase.removeChannel(channel)
       }
     }
   }, [user])
   
   const handleBuyCredits = () => {
-    // 设置导航状态
+    // Set navigation state
     setIsNavigating(true)
     
-    // 使用 Next.js 路由导航，而不是直接修改 window.location.href
+    // Use Next.js router for navigation
     try {
       router.push('/credits/purchase')
       
-      // 由于 Next.js 的 router.push 不返回 Promise，我们使用 setTimeout 来模拟导航完成
+      // Since Next.js router.push doesn't return a Promise, use setTimeout to simulate navigation completion
       setTimeout(() => {
-        // 如果用户仍在当前页面，重置导航状态
+        // Reset navigation state if user is still on current page
         if (pathname !== '/credits/purchase') {
           setIsNavigating(false)
         }

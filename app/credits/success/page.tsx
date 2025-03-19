@@ -36,15 +36,22 @@ async function getPaymentData(sessionId: string) {
       .eq('id', user.id)
       .single()
 
-    // 计算总积分：当前积分 + 新购买的积分
+    // 获取交易记录，检查是否已经处理过这笔交易
+    const { data: transaction } = await supabase
+      .from('credit_transactions')
+      .select('amount')
+      .eq('stripe_session_id', sessionId)
+      .single()
+
+    // 如果交易已经处理过，使用数据库中的当前积分作为总积分
     const currentCredits = profile?.credits || 0
-    const totalCredits = currentCredits + data.credits
+    const purchasedCredits = data.credits
 
     return {
       success: true,
       sessionId,
-      purchasedCredits: data.credits,
-      currentCredits: totalCredits, // 返回总积分
+      purchasedCredits,
+      currentCredits, // 直接使用数据库中的当前积分
       error: null
     }
   } catch (error) {

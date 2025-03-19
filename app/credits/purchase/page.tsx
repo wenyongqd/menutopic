@@ -4,6 +4,8 @@ import { getServerUserProfile } from '@/app/actions'
 import { PurchaseClient } from './client'
 import { createClient } from '@/lib/supabase-server'
 
+export const revalidate = 0;
+
 export default async function PurchaseCreditsPage() {
   // 获取用户信息
   const userProfile = await getServerUserProfile();

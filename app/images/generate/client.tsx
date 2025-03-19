@@ -1069,7 +1069,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                           )
                         }
                       >
-                        <span className="text-base">Italian Bacon Cream Pasta</span>
+                        <span className="text-base font-semibold">Italian Bacon Cream Pasta</span>
                         <br />
                         Italian spaghetti with egg cream sauce, Italian bacon
                         and Parmesan cheese
@@ -1082,7 +1082,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                           )
                         }
                       >
-                        <span className="text-base">Red Sauce Bacon Pasta</span>
+                        <span className="text-base font-semibold">Red Sauce Bacon Pasta</span>
                         <br />
                         Hollow pasta, tomato red sauce, Italian bacon, chili,
                         Pecorino cheese
@@ -1095,7 +1095,9 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                           )
                         }
                       >
-                        <span className="text-base">Wild Mushroom Cream Fettuccine</span>
+                        <span className="text-base font-semibold">
+                          Wild Mushroom Cream Fettuccine
+                        </span>
                         <br />
                         Fresh egg pasta, mushroom cream sauce, crispy
                         prosciutto, Parmesan cheese

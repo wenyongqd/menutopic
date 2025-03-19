@@ -23,19 +23,6 @@ export async function GET(req: Request) {
       return new NextResponse('Missing session ID', { status: 400 })
     }
 
-    // 获取当前用户会话
-    const cookieStore = cookies()
-    const authClient = createRouteHandlerClient({ cookies: () => cookieStore })
-    const { data: { session }, error: sessionError } = await authClient.auth.getSession()
-
-    if (sessionError) {
-      console.error('Session error:', sessionError)
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Authentication error'
-      }, { status: 401 })
-    }
-
     // 如果是模拟会话，直接返回成功
     if (sessionId === 'test_session') {
       const mockCredits = parseInt(searchParams.get('credits') || '0')
@@ -54,37 +41,29 @@ export async function GET(req: Request) {
         error: 'Stripe is not configured'
       }, { status: 500 })
     }
-    
-    try {
-      // 从 Stripe 获取会话信息
-      const stripeSession = await stripe.checkout.sessions.retrieve(sessionId)
-      
-      if (stripeSession.payment_status !== 'paid') {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Payment not completed'
-        }, { status: 400 })
-      }
-      
-      const userId = stripeSession.metadata?.userId
-      const packageId = stripeSession.metadata?.packageId
-      const credits = parseInt(stripeSession.metadata?.credits || '0')
-      
-      if (!userId || !packageId || !credits) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'Missing metadata'
-        }, { status: 400 })
-      }
 
-      // 验证用户身份
-      if (!session?.user || session.user.id !== userId) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'User mismatch'
-        }, { status: 401 })
-      }
-      
+    // 从 Stripe 获取会话信息
+    const stripeSession = await stripe.checkout.sessions.retrieve(sessionId)
+    
+    if (stripeSession.payment_status !== 'paid') {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Payment not completed'
+      }, { status: 400 })
+    }
+    
+    const userId = stripeSession.metadata?.userId
+    const packageId = stripeSession.metadata?.packageId
+    const credits = parseInt(stripeSession.metadata?.credits || '0')
+    
+    if (!userId || !packageId || !credits) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Missing metadata'
+      }, { status: 400 })
+    }
+
+    try {
       // 检查交易是否已经处理过
       const { data: existingTransaction } = await supabase
         .from('credit_transactions')
@@ -142,10 +121,28 @@ export async function GET(req: Request) {
           stripe_session_id: sessionId,
           description: `Purchased ${credits} credits`
         })
+
+      // 创建一个新的认证会话
+      const cookieStore = cookies()
+      const authClient = createRouteHandlerClient({ cookies: () => cookieStore })
+      
+      try {
+        // 尝试使用现有会话
+        const { data: { session }, error: sessionError } = await authClient.auth.getSession()
+        
+        if (sessionError || !session) {
+          // 如果没有有效会话，创建一个新的
+          await authClient.auth.refreshSession()
+        }
+      } catch (authError) {
+        console.error('Auth refresh error:', authError)
+        // 继续处理，因为支付已经完成
+      }
       
       return NextResponse.json({ 
         success: true, 
-        credits
+        credits,
+        userId // 返回用户ID以便前端处理
       })
     } catch (stripeError: Error | unknown) {
       console.error('Stripe error:', stripeError)

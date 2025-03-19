@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/toast'
 import { CheckCircle, ArrowRight, CreditCard } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
+import { createClient } from '@/lib/supabase'
 
 // 创建一个内部组件来使用 useSearchParams
 function SuccessPageContent() {
@@ -16,7 +17,7 @@ function SuccessPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  const { refreshData } = useAuth()
+  const { refreshData, user } = useAuth()
   
   const sessionId = searchParams.get('session_id')
   const isMock = searchParams.get('mock') === 'true'
@@ -54,10 +55,25 @@ function SuccessPageContent() {
         }
         
         const data = await response.json()
-        setCredits(data.credits || 0)
         
-        // 刷新认证状态
-        refreshData()
+        if (data.success) {
+          setCredits(data.credits || 0)
+          
+          // 如果当前没有用户会话，尝试恢复
+          if (!user) {
+            try {
+              const supabase = createClient()
+              await supabase.auth.refreshSession()
+              // 刷新认证状态
+              refreshData()
+            } catch (authError) {
+              console.error('Error restoring session:', authError)
+              // 继续处理，因为支付已经完成
+            }
+          }
+        } else {
+          throw new Error(data.error || 'Verification failed')
+        }
       } catch (error) {
         console.error('Verification error:', error)
         toast({
@@ -71,7 +87,7 @@ function SuccessPageContent() {
     }
     
     verifyPayment()
-  }, [sessionId, router, toast, isMock, searchParams, retryCount, refreshData])
+  }, [sessionId, router, toast, isMock, searchParams, retryCount, refreshData, user])
   
   if (isLoading) {
     return (

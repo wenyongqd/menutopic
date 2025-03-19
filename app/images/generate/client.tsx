@@ -206,6 +206,11 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         const json = await res.json();
         console.log("parseMenu API response:", json);
 
+        // 更新状态和菜单数据
+        setParsedMenu(json.menu);
+        setStatus("created"); // 确保在数据设置后更新状态
+        setIsUploading(false); // 重置上传状态
+
         // Fetch updated credits from the database
         try {
           if (user) {
@@ -233,10 +238,6 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
           updateCredits(credits - CREDITS_PER_IMAGE);
         }
 
-        // 更新状态和菜单数据
-        setStatus("created");
-        setParsedMenu(json.menu);
-
         // 清除已选择的文件
         setSelectedFile(null);
 
@@ -248,6 +249,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       } catch (parseError: unknown) {
         console.error("Parse menu error:", parseError);
         setStatus("initial");
+        setIsUploading(false);
         toast({
           title: "Failed to parse menu",
           description:
@@ -260,6 +262,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     } catch (uploadError: unknown) {
       console.error("Upload error:", uploadError);
       setStatus("initial");
+      setIsUploading(false);
       toast({
         title: "Failed to upload image",
         description:
@@ -273,9 +276,6 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
-
-      // 重置上传状态
-      setIsUploading(false);
     }
   };
 

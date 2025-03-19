@@ -509,7 +509,6 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       return;
     }
 
-    // 检查本地积分状态
     if (userCredits < CREDITS_PER_IMAGE) {
       toast({
         title: "Insufficient Credits",
@@ -560,37 +559,6 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     }, 15000);
 
     try {
-      // 在生成之前先从数据库获取最新积分
-      if (user) {
-        const { data: currentProfile, error } = await createClient()
-          .from("user_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (error) {
-          console.error("Failed to fetch current credits:", error);
-        } else {
-          // 使用数据库中的最新积分
-          const currentCredits = currentProfile?.credits !== undefined
-            ? currentProfile.credits
-            : currentProfile?.credit_amount || 0;
-          
-          if (currentCredits < CREDITS_PER_IMAGE) {
-            setIsGenerating(false);
-            toast({
-              title: "Insufficient Credits",
-              description: `You need ${CREDITS_PER_IMAGE} credits to generate an image. Please purchase more credits.`,
-              variant: "destructive",
-            });
-            setUserCredits(currentCredits); // 更新显示的积分
-            return;
-          }
-          
-          setUserCredits(currentCredits); // 更新显示的积分
-        }
-      }
-
       console.log("Sending API request for image generation");
       const response = await fetch("/api/images/generate", {
         method: "POST",
@@ -647,44 +615,38 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         img.onload = async () => {
           console.log("URL validation successful, updating UI");
           
-          // 立即更新用户积分
-          setUserCredits(prev => prev - CREDITS_PER_IMAGE);
+          // 立即扣除积分并获取新的积分值
+          const newCredits = userCredits - CREDITS_PER_IMAGE;
+          setUserCredits(newCredits);
           
           // 同时更新数据库中的积分
           try {
             if (user) {
-              const { data: updatedProfile, error } = await createClient()
+              const { error } = await createClient()
                 .from("user_profiles")
-                .select("*")
-                .eq("id", user.id)
-                .single();
+                .update({ credits: newCredits })
+                .eq("id", user.id);
 
               if (error) {
-                console.error("Failed to fetch updated credits:", error);
-              } else {
-                // 使用数据库中的最新积分
-                const updatedCredits = updatedProfile?.credits !== undefined
-                  ? updatedProfile.credits
-                  : updatedProfile?.credit_amount || 0;
-                setUserCredits(updatedCredits);
+                console.error("Failed to update credits in database:", error);
+                // 即使数据库更新失败，我们也保持本地状态的更新
               }
             }
           } catch (creditError) {
             console.error("Error updating credits:", creditError);
           }
-
+          
           setIsGenerating(false);
           setGeneratedImage(imageUrl);
           setShowConfirmation(true);
           toast({
             title: "Success",
-            description: "Image generated successfully!",
+            description: `Image generated successfully! ${CREDITS_PER_IMAGE} credits have been deducted.`,
             variant: "success",
           });
         };
         img.onerror = () => {
           console.error("URL validation failed:", imageUrl);
-          setIsGenerating(false);
           toast({
             title: "Error",
             description: "Generated URL is invalid. Please try the emergency recovery button.",

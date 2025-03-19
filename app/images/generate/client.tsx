@@ -521,27 +521,45 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     setIsGenerating(true);
     setGeneratedImage(null);
     
+    console.log("Starting image generation process with prompt:", prompt);
+    
     // 设置一个超时检查，如果15秒后仍在生成状态，尝试恢复
     const timeoutId = setTimeout(() => {
       if (isGenerating) {
-        console.log("Generation timeout reached, attempting auto-recovery");
+        console.log("Generation timeout reached, checking for logged URLs");
         const loggedUrl = window.sessionStorage.getItem("last_generated_image_url");
         if (loggedUrl) {
-          console.log("Auto-recovery: Using URL from logs:", loggedUrl);
-          setGeneratedImage(loggedUrl);
-          setIsGenerating(false);
-          setShowConfirmation(true);
-          toast({
-            title: "Image recovered",
-            description: "Your image was generated but not displayed. It has been recovered.",
-            variant: "success",
-          });
+          console.log("Found logged URL for auto-recovery:", loggedUrl);
+          // 验证URL是否可访问
+          const img = new window.Image();
+          img.onload = () => {
+            console.log("Logged URL is valid, proceeding with auto-recovery");
+            setGeneratedImage(loggedUrl);
+            setIsGenerating(false);
+            setShowConfirmation(true);
+            toast({
+              title: "Image recovered",
+              description: "Your image was generated but not displayed. It has been recovered.",
+              variant: "success",
+            });
+          };
+          img.onerror = () => {
+            console.error("Auto-recovery failed: logged URL is invalid:", loggedUrl);
+            toast({
+              title: "Recovery failed",
+              description: "Please use the emergency recovery button to try again",
+              variant: "destructive",
+            });
+          };
+          img.src = loggedUrl;
+        } else {
+          console.log("No logged URL found for auto-recovery");
         }
       }
     }, 15000);
 
     try {
-      console.log("Starting image generation with prompt:", prompt.substring(0, 50) + "...");
+      console.log("Sending API request for image generation");
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: {
@@ -551,219 +569,84 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to generate image");
+        throw new Error(`API request failed with status ${response.status}`);
       }
 
-      console.log("Received successful response from API");
-      // 获取响应文本以进行调试
+      console.log("Received API response, status:", response.status);
       const responseText = await response.text();
       console.log("Raw API response:", responseText.substring(0, 100) + "...");
       
       let data;
       try {
-        // 将文本解析为JSON
         data = JSON.parse(responseText);
-        console.log("Image generation API response data keys:", Object.keys(data));
+        console.log("Parsed API response data keys:", Object.keys(data));
+        console.log("Response contains imageUrl:", !!data.imageUrl);
+        console.log("Response contains success:", !!data.success);
+        console.log("Response contains imageId:", !!data.imageId);
       } catch (jsonError) {
-        console.error("Error parsing JSON response:", jsonError);
+        console.error("Failed to parse API response:", jsonError);
         throw new Error("Invalid response format from server");
       }
 
-      // Instead of just updating the local state, fetch the updated credits from the database
-      try {
-        if (user) {
-          const { data: updatedProfile, error } = await createClient()
-            .from("user_profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-
-          if (error) {
-            console.error("Failed to fetch updated credits:", error);
-          } else {
-            // Update the credits with the value from the database
-            const updatedCredits =
-              updatedProfile?.credits !== undefined
-                ? updatedProfile.credits
-                : updatedProfile?.credit_amount || 0;
-            setUserCredits(updatedCredits);
-            console.log("Updated user credits to:", updatedCredits);
-          }
-        } else {
-          console.error("User not found when trying to fetch updated credits");
-          // Still update the local state as a fallback
-          setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
-        }
-      } catch (creditFetchError) {
-        console.error("Error fetching updated credits:", creditFetchError);
-        // Still update the local state as a fallback
-        setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
-      }
-
-      // 处理图像 URL 或 base64 数据
+      // 处理图像 URL
       let imageUrl;
-
-      console.log("Processing image data structure:", {
-        hasImage: !!data.image,
-        hasB64Json: data.image?.b64_json ? "yes" : "no",
-        hasImageUrl: !!data.imageUrl,
-        imageUrlType: data.imageUrl ? typeof data.imageUrl : "none",
-        hasSuccess: !!data.success,
-        hasImageId: !!data.imageId
-      });
-
-      // Check if the response is from the main API or the secondary API
-      if (data.image && data.image.b64_json) {
-        // Response from main API (same as main page)
-        console.log("Processing response from main API");
-        imageUrl = `data:image/png;base64,${data.image.b64_json}`;
-        console.log("Created image URL from b64_json");
-
-        // Add the new item to the parsed menu (like in the main page)
-        setParsedMenu((prev) => [
-          {
-            name: data.name,
-            price: data.price || "",
-            description: data.description,
-            menuImage: data.image,
-          },
-          ...prev,
-        ]);
-      } else if (data.imageUrl) {
-        // Response from secondary API or main API with imageUrl field
-        console.log("Processing response with imageUrl:", data.imageUrl.substring(0, 50) + "...");
+      if (data.imageUrl) {
+        console.log("Using direct imageUrl from response");
         imageUrl = data.imageUrl;
-
-        // If it's base64 data without a prefix, add the prefix
-        if (
-          imageUrl &&
-          !imageUrl.startsWith("http") &&
-          !imageUrl.startsWith("data:")
-        ) {
-          imageUrl = `data:image/png;base64,${imageUrl}`;
-          console.log("Added data URL prefix to imageUrl");
-        }
-
-        // If we also have image data in the response, add it to the parsed menu
-        if (data.image) {
-          setParsedMenu((prev) => [
-            {
-              name: data.name || data.description || prompt,
-              price: data.price || "",
-              description: data.description || prompt,
-              menuImage: data.image,
-            },
-            ...prev,
-          ]);
-        }
+        window.sessionStorage.setItem('last_generated_image_url', data.imageUrl);
       } else if (data.success && data.imageId) {
-        // Response from the /api/images/generate endpoint
-        console.log("Processing response from /api/images/generate endpoint with imageId:", data.imageId);
-
-        // 直接使用API返回的imageUrl，不再尝试从数据库获取
-        if (data.imageUrl) {
-          console.log("Directly using imageUrl from API response");
-          imageUrl = data.imageUrl;
-          
-          // 保存到sessionStorage作为备份
-          window.sessionStorage.setItem('last_generated_image_url', data.imageUrl);
-          
-          // 不再尝试从数据库获取图像，避免认证问题
-          console.log("Skipping database verification due to potential auth issues");
-        } else {
-          console.log("No imageUrl in API response, attempting database fetch anyway");
-          
-          // 只有在没有直接URL的情况下才尝试数据库
-          try {
-            const { data: imageData, error } = await createClient()
-              .from("image_generations")
-              .select("image_url")
-              .eq("id", data.imageId)
-              .single();
-
-            if (error) {
-              console.error("Error fetching image from database:", error);
-              throw new Error("Failed to fetch image from database");
-            }
-
-            if (imageData && imageData.image_url) {
-              imageUrl = imageData.image_url;
-              console.log("Retrieved image URL from database:", imageUrl.substring(0, 50) + "...");
-
-              // 验证图片是否成功保存到数据库
-              await verifyImageSaved(data.imageId);
-            } else {
-              console.error("No image URL found in database");
-              imageUrl = data.imageUrl; // 使用API返回的URL作为备用
-              console.log("Using fallback imageUrl:", imageUrl ? imageUrl.substring(0, 50) + "..." : "undefined");
-            }
-          } catch (dbError) {
-            console.error("Database error:", dbError);
-            imageUrl = data.imageUrl; // 使用API返回的URL作为备用
-            console.log("Using fallback imageUrl due to DB error:", imageUrl ? imageUrl.substring(0, 50) + "..." : "undefined");
+        console.log("Got imageId, attempting to use it:", data.imageId);
+        imageUrl = data.imageUrl; // 使用API返回的URL
+        if (imageUrl) {
+          console.log("Found imageUrl with imageId");
+          window.sessionStorage.setItem('last_generated_image_url', imageUrl);
+          // 验证图片是否保存到数据库
+          const isVerified = await verifyImageSaved(data.imageId);
+          if (!isVerified) {
+            console.warn("Image verification failed, but proceeding with display");
           }
-        }
-      } else {
-        // 尝试从日志中看到的URL直接使用
-        console.log("No standard image data found, checking for direct URLs in log");
-        if (data.url) {
-          imageUrl = data.url;
-          console.log("Found direct URL in response:", imageUrl.substring(0, 50) + "...");
-        } else if (data.b64_json) {
-          imageUrl = `data:image/png;base64,${data.b64_json}`;
-          console.log("Found direct base64 data in response");
         }
       }
 
-      // Set the image URL in state
       if (imageUrl) {
-        console.log("Setting generatedImage to:", typeof imageUrl === 'string' ? 
-          (imageUrl.length > 50 ? imageUrl.slice(0, 50) + '...' : imageUrl) : 
-          'non-string URL');
-        
-        // 直接设置状态，避免使用复杂的嵌套setTimeout
-        setIsGenerating(false);
-        setGeneratedImage(imageUrl);
-        const confirmValue = true;
-        setShowConfirmation(confirmValue);
-        
-        toast({
-          title: "Success",
-          description: "Image generated successfully!",
-        });
+        console.log("Final imageUrl to be used:", imageUrl.substring(0, 50) + "...");
+        // 验证URL是否可访问
+        const img = new window.Image();
+        img.onload = () => {
+          console.log("URL validation successful, updating UI");
+          setIsGenerating(false);
+          setGeneratedImage(imageUrl);
+          setShowConfirmation(true);
+          toast({
+            title: "Success",
+            description: "Image generated successfully!",
+            variant: "success",
+          });
+        };
+        img.onerror = () => {
+          console.error("URL validation failed:", imageUrl);
+          toast({
+            title: "Error",
+            description: "Generated URL is invalid. Please try the emergency recovery button.",
+            variant: "destructive",
+          });
+        };
+        img.src = imageUrl;
       } else {
-        console.error("No image URL could be determined from the response");
-        throw new Error("No image URL found in response");
+        throw new Error("No valid image URL found in response");
       }
     } catch (error) {
-      console.error("Error generating image:", error);
-      // 确保错误情况下也重置生成状态
+      console.error("Error in image generation process:", error);
       setIsGenerating(false);
-      
+      const errorMessage = error instanceof Error ? error.message : "Failed to generate image";
       toast({
         title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to generate image",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      // 清除超时检查
       clearTimeout(timeoutId);
-      
-      // 确保无论如何都重置生成状态
-      console.log("Finally block: resetting generating state");
-      setIsGenerating(false);
-      
-      // 如果到这一步还没有图像URL但有日志显示图像已上传，尝试使用该URL
-      if (!generatedImage) {
-        const loggedUrl = window.sessionStorage.getItem("last_generated_image_url");
-        if (loggedUrl) {
-          console.log("Using URL from logs:", loggedUrl);
-          setGeneratedImage(loggedUrl);
-          setShowConfirmation(true);
-        }
-      }
+      console.log("Image generation process completed");
     }
   };
 
@@ -1171,28 +1054,67 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                               // 检查日志中是否有URL信息
                               const loggedUrl = window.sessionStorage.getItem("last_generated_image_url");
                               
-                              // 不管有没有URL，直接强制刷新页面
                               if (loggedUrl) {
-                                // 保存URL到会话存储，以便刷新后恢复
-                                window.sessionStorage.setItem("image_to_show_after_reload", loggedUrl);
-                                console.log("Emergency recovery: URL saved, refreshing page");
+                                console.log("Attempting to recover with URL:", loggedUrl);
                                 
-                                // 刷新页面
-                                window.location.reload();
+                                // 创建一个临时的Image对象来验证URL
+                                const img = new window.Image();
+                                img.onload = () => {
+                                  console.log("URL validation successful, proceeding with recovery");
+                                  window.sessionStorage.setItem("image_to_show_after_reload", loggedUrl);
+                                  toast({
+                                    title: "URL验证成功",
+                                    description: "正在刷新页面以恢复图片...",
+                                    variant: "success",
+                                  });
+                                  setTimeout(() => window.location.reload(), 1000);
+                                };
+                                img.onerror = () => {
+                                  console.error("URL validation failed:", loggedUrl);
+                                  toast({
+                                    title: "URL验证失败",
+                                    description: "请检查控制台日志并手动输入URL",
+                                    variant: "destructive",
+                                  });
+                                  const userInput = window.prompt("请输入图片URL（在控制台日志中寻找'Image uploaded to Bytescale:'）");
+                                  const manualUrl = userInput as string | null;
+                                  if (manualUrl && manualUrl.trim().length > 0) {
+                                    console.log("Attempting recovery with manual URL:", manualUrl);
+                                    window.sessionStorage.setItem("image_to_show_after_reload", manualUrl);
+                                    window.sessionStorage.setItem("last_generated_image_url", manualUrl);
+                                    window.location.reload();
+                                  } else {
+                                    console.log("Manual URL input cancelled or empty");
+                                    toast({
+                                      title: "Recovery cancelled",
+                                      description: "No URL was provided for recovery",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                };
+                                img.src = loggedUrl;
                               } else {
-                                // 尝试从控制台日志获取URL
-                                alert("请检查控制台是否有 'Image uploaded to Bytescale:' 这样的日志，有的话请复制URL并点击'确定'");
-                                const manualUrl = window.prompt("请输入看到的图像URL，或直接点击确定重置状态");
-                                
-                                if (manualUrl && manualUrl.trim()) {
-                                  // 保存手动输入的URL，并刷新
+                                console.log("No saved URL found, prompting for manual input");
+                                toast({
+                                  title: "未找到已保存的URL",
+                                  description: "请检查控制台日志并手动输入URL",
+                                  variant: "destructive",
+                                });
+                                const userInput = window.prompt("请输入图片URL（在控制台日志中寻找'Image uploaded to Bytescale:'）");
+                                const manualUrl = userInput as string | null;
+                                if (manualUrl && manualUrl.trim().length > 0) {
+                                  console.log("Attempting recovery with manual URL:", manualUrl);
                                   window.sessionStorage.setItem("image_to_show_after_reload", manualUrl);
                                   window.sessionStorage.setItem("last_generated_image_url", manualUrl);
-                                  console.log("Manual URL saved, refreshing page");
+                                  window.location.reload();
+                                } else {
+                                  console.log("Manual URL input cancelled or empty");
+                                  toast({
+                                    title: "Recovery cancelled",
+                                    description: "No URL was provided for recovery",
+                                    variant: "destructive",
+                                  });
                                 }
-                                
-                                // 刷新页面，无论是否输入了URL
-                                window.location.reload();
                               }
                             }}
                             className="bg-amber-100 hover:bg-amber-200 text-amber-900"
@@ -1208,15 +1130,12 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                     {generatedImage && (
                       <div className="mt-6 space-y-4">
                         <div className="flex justify-between items-center">
-                          <h3 className="text-lg font-medium">
-                            Generated Image:
-                          </h3>
+                          <h3 className="text-lg font-medium">Generated Image:</h3>
                           <div className="flex space-x-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                // 使用相同的提示重新生成图片
                                 setGeneratedImage(null);
                                 setShowConfirmation(false);
                                 handleGenerateImage();
@@ -1225,23 +1144,6 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                             >
                               <RefreshCw className="h-4 w-4" />
                               <span>Regenerate</span>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                // 创建一个下载链接
-                                const link = document.createElement("a");
-                                link.href = generatedImage;
-                                link.download = `generated-${Date.now()}.png`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                              }}
-                              className="flex items-center gap-2"
-                            >
-                              <ArrowDownTrayIcon className="h-4 w-4" />
-                              <span>Download</span>
                             </Button>
                           </div>
                         </div>
@@ -1254,17 +1156,31 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                             priority
                             sizes="(max-width: 768px) 100vw, 50vw"
                             onError={(e) => {
-                              console.error(
-                                "Error loading generated image:",
-                                e
-                              );
+                              console.error("Error loading generated image:", e);
+                              console.error("Failed URL:", generatedImage);
                               e.currentTarget.onerror = null;
+                              
+                              // 显示更详细的错误信息
                               toast({
-                                title: "Image loading error",
-                                description:
-                                  "Failed to load the generated image",
+                                title: "图片加载失败",
+                                description: "URL可能无效或无法访问，请尝试使用紧急恢复按钮",
                                 variant: "destructive",
                               });
+                              
+                              // 清除可能无效的URL
+                              window.sessionStorage.removeItem("image_to_show_after_reload");
+                              
+                              // 如果有备用URL，尝试使用
+                              const backupUrl = window.sessionStorage.getItem("last_generated_image_url");
+                              if (backupUrl && backupUrl !== generatedImage) {
+                                console.log("Attempting to use backup URL:", backupUrl);
+                                setGeneratedImage(backupUrl);
+                              }
+                            }}
+                            onLoad={() => {
+                              console.log("Image loaded successfully:", generatedImage);
+                              setIsGenerating(false);
+                              setShowConfirmation(true);
                             }}
                           />
                         </div>

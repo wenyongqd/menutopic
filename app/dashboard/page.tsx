@@ -10,11 +10,15 @@ export default async function DashboardPage() {
   
   // 如果用户未登录，重定向到登录页面
   if (!userProfile) {
+    console.log('Dashboard - No user profile, redirecting to login');
     redirect('/login?redirect=/dashboard');
   }
   
+  console.log('Dashboard - User profile loaded:', userProfile.user.id);
+  
   // 获取最近生成的图片
   const recentImages = await getRecentImages(userProfile.user.id);
+  console.log('Dashboard - Recent images loaded:', recentImages.length);
   
   return (
     <Suspense fallback={<DashboardSkeleton />}>

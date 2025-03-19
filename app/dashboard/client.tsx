@@ -10,14 +10,17 @@ import { useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCredits } from '@/components/providers/credits-provider';
 
-// 仅保留使用的接口定义
+// 更新接口定义以匹配数据库结构
 interface ImageGeneration {
   id: string;
-  prompt: string;
-  image_url?: string;
   created_at: string;
+  user_id: string;
+  prompt: string;
+  image_url: string;
+  credits_used: number;
   status: string;
-  // 其他可能的属性
+  source: string;
+  menu_parsing_id?: string;
 }
 
 // 用户配置文件接口
@@ -39,18 +42,17 @@ export function DashboardClient({ user, profile, recentImages }: DashboardClient
   const { credits } = useCredits();
   const { user: clientUser, refreshData } = useAuth();
   
-  // 在组件挂载时刷新认证状态
   useEffect(() => {
     console.log('DashboardClient - Component mounted, refreshing auth state');
     console.log('DashboardClient - Server user:', user?.id);
     console.log('DashboardClient - Client user:', clientUser?.id || 'null');
+    console.log('DashboardClient - Recent images:', recentImages);
     
-    // 如果客户端没有用户状态，但服务器有，则刷新认证状态
     if (!clientUser && user) {
       console.log('DashboardClient - Client state out of sync with server, refreshing');
       refreshData();
     }
-  }, [user, clientUser, refreshData]);
+  }, [user, clientUser, refreshData, recentImages]);
 
   return (
     <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
@@ -154,6 +156,12 @@ export function DashboardClient({ user, profile, recentImages }: DashboardClient
                         src={image.image_url}
                         alt={image.prompt}
                         className="object-cover w-full h-full transition-transform hover:scale-105"
+                        onError={(e) => {
+                          console.error('Error loading image:', image.image_url);
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '/placeholder-image.png';
+                        }}
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
@@ -169,10 +177,15 @@ export function DashboardClient({ user, profile, recentImages }: DashboardClient
                     <p className="text-sm line-clamp-2 font-medium">
                       {image.prompt}
                     </p>
-                    <p className="text-xs text-text-200 mt-2 flex items-center">
-                      <Clock className="mr-1 h-3 w-3" />
-                      {new Date(image.created_at).toLocaleDateString()}
-                    </p>
+                    <div className="flex justify-between items-center mt-2">
+                      <p className="text-xs text-text-200 flex items-center">
+                        <Clock className="mr-1 h-3 w-3" />
+                        {new Date(image.created_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-text-200">
+                        {image.credits_used} credits
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               </div>

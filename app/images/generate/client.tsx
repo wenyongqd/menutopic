@@ -594,55 +594,12 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         console.log("Using direct imageUrl from response");
         imageUrl = data.imageUrl;
         window.sessionStorage.setItem('last_generated_image_url', data.imageUrl);
-        
-        // 立即更新用户的 credits
-        setUserCredits(prev => prev - CREDITS_PER_IMAGE);
-        
-        // 同时从数据库获取最新的 credits
-        try {
-          const { data: updatedProfile } = await createClient()
-            .from("user_profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-
-          if (updatedProfile) {
-            const updatedCredits = updatedProfile.credits !== undefined
-              ? updatedProfile.credits
-              : updatedProfile.credit_amount || 0;
-            setUserCredits(updatedCredits);
-          }
-        } catch (error) {
-          console.error("Error fetching updated credits:", error);
-        }
       } else if (data.success && data.imageId) {
         console.log("Got imageId, attempting to use it:", data.imageId);
-        imageUrl = data.imageUrl;
+        imageUrl = data.imageUrl; // 使用API返回的URL
         if (imageUrl) {
           console.log("Found imageUrl with imageId");
           window.sessionStorage.setItem('last_generated_image_url', imageUrl);
-          
-          // 立即更新用户的 credits
-          setUserCredits(prev => prev - CREDITS_PER_IMAGE);
-          
-          // 同时从数据库获取最新的 credits
-          try {
-            const { data: updatedProfile } = await createClient()
-              .from("user_profiles")
-              .select("*")
-              .eq("id", user.id)
-              .single();
-
-            if (updatedProfile) {
-              const updatedCredits = updatedProfile.credits !== undefined
-                ? updatedProfile.credits
-                : updatedProfile.credit_amount || 0;
-              setUserCredits(updatedCredits);
-            }
-          } catch (error) {
-            console.error("Error fetching updated credits:", error);
-          }
-          
           // 验证图片是否保存到数据库
           const isVerified = await verifyImageSaved(data.imageId);
           if (!isVerified) {

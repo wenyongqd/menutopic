@@ -509,7 +509,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       return;
     }
 
-    // 确保用户有足够的积分
+    // 检查本地积分状态
     if (userCredits < CREDITS_PER_IMAGE) {
       toast({
         title: "Insufficient Credits",
@@ -517,40 +517,6 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         variant: "destructive",
       });
       return;
-    }
-
-    // 先从数据库获取最新积分
-    try {
-      if (user) {
-        const { data: currentProfile, error } = await createClient()
-          .from("user_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (error) {
-          console.error("Failed to fetch current credits:", error);
-        } else {
-          // 使用数据库中的最新积分
-          const currentCredits = currentProfile?.credits !== undefined
-            ? currentProfile.credits
-            : currentProfile?.credit_amount || 0;
-          
-          if (currentCredits < CREDITS_PER_IMAGE) {
-            toast({
-              title: "Insufficient Credits",
-              description: `You need ${CREDITS_PER_IMAGE} credits to generate an image. Please purchase more credits.`,
-              variant: "destructive",
-            });
-            setUserCredits(currentCredits); // 更新显示的积分
-            return;
-          }
-          
-          setUserCredits(currentCredits); // 更新显示的积分
-        }
-      }
-    } catch (creditError) {
-      console.error("Error checking credits:", creditError);
     }
 
     setIsGenerating(true);
@@ -594,6 +560,37 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     }, 15000);
 
     try {
+      // 在生成之前先从数据库获取最新积分
+      if (user) {
+        const { data: currentProfile, error } = await createClient()
+          .from("user_profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) {
+          console.error("Failed to fetch current credits:", error);
+        } else {
+          // 使用数据库中的最新积分
+          const currentCredits = currentProfile?.credits !== undefined
+            ? currentProfile.credits
+            : currentProfile?.credit_amount || 0;
+          
+          if (currentCredits < CREDITS_PER_IMAGE) {
+            setIsGenerating(false);
+            toast({
+              title: "Insufficient Credits",
+              description: `You need ${CREDITS_PER_IMAGE} credits to generate an image. Please purchase more credits.`,
+              variant: "destructive",
+            });
+            setUserCredits(currentCredits); // 更新显示的积分
+            return;
+          }
+          
+          setUserCredits(currentCredits); // 更新显示的积分
+        }
+      }
+
       console.log("Sending API request for image generation");
       const response = await fetch("/api/images/generate", {
         method: "POST",
@@ -687,6 +684,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         };
         img.onerror = () => {
           console.error("URL validation failed:", imageUrl);
+          setIsGenerating(false);
           toast({
             title: "Error",
             description: "Generated URL is invalid. Please try the emergency recovery button.",

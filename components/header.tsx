@@ -119,16 +119,16 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
       // 使用 router.push 导航，让服务器端处理认证
       console.log('Header - Protected page detected, using router.push');
       router.push(path);
+      // 快速重置导航状态
+      setTimeout(() => setIsNavigating(false), 100);
       return;
     }
     
     // 导航到其他路径
     router.push(path);
     
-    // 重置导航状态
-    setTimeout(() => {
-      setIsNavigating(false);
-    }, 1000);
+    // 快速重置导航状态
+    setTimeout(() => setIsNavigating(false), 100);
   };
 
   return (
@@ -215,7 +215,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                           : "hover:bg-bg-200"
                       }`}
                       onClick={() => handleNavigation('/dashboard')}
-                      disabled={isNavigating || isDashboard}
+                      disabled={isNavigating}
                     >
                       <Home className={`h-4 w-4 ${isDashboard ? "text-primary-100" : ""}`} />
                       <span>Dashboard</span>
@@ -229,7 +229,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                           : "hover:bg-bg-200"
                       }`}
                       onClick={() => handleNavigation('/images/generate')}
-                      disabled={isNavigating || isGeneratePage}
+                      disabled={isNavigating}
                     >
                       <Image className={`h-4 w-4 ${isGeneratePage ? "text-primary-100" : ""}`} />
                       <span>Generate</span>
@@ -323,7 +323,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                       }`}
                       variant="ghost"
                       onClick={() => handleNavigation('/dashboard')}
-                      disabled={isNavigating || isDashboard}
+                      disabled={isNavigating}
                     >
                       <Home className={`h-5 w-5 ${isDashboard ? "text-primary-100" : ""}`} />
                       <span>Dashboard</span>
@@ -336,7 +336,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                       }`}
                       variant="ghost"
                       onClick={() => handleNavigation('/images/generate')}
-                      disabled={isNavigating || isGeneratePage}
+                      disabled={isNavigating}
                     >
                       <Image className={`h-5 w-5 ${isGeneratePage ? "text-primary-100" : ""}`} />
                       <span>Generate Images</span>

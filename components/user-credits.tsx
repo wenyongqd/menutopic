@@ -15,6 +15,7 @@ interface UserCreditsProps {
 
 export function UserCredits({ initialCredits }: UserCreditsProps) {
   const [credits, setCredits] = useState<number | null>(initialCredits ?? null)
+  const [lastValidCredits, setLastValidCredits] = useState<number | null>(initialCredits ?? null)
   const [isLoading, setIsLoading] = useState(initialCredits === undefined)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
@@ -55,8 +56,7 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
           return;
         }
         
-        console.log('UserCredits - Max retries reached, showing temp state');
-        setCredits(0);
+        console.log('UserCredits - Max retries reached, keeping last valid credits');
         setIsLoading(false);
         return;
       }
@@ -64,7 +64,6 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
       // 确保user存在
       if (!user) {
         console.log('UserCredits - No user object available for fetching');
-        setCredits(0);
         setIsLoading(false);
         return;
       }
@@ -82,8 +81,11 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
         return;
       }
       
-      // 如果 userCredits 为 null，则设为 0
-      setCredits(userCredits ?? 0);
+      // 只在获取到有效值时更新
+      if (userCredits !== null) {
+        setCredits(userCredits);
+        setLastValidCredits(userCredits);
+      }
       setIsLoading(false);
     } catch (error) {
       console.error('UserCredits - Failed to fetch credits:', error)
@@ -94,9 +96,8 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
           fetchCredits(retryCount + 1)
         }, 1000 * (retryCount + 1)) // Gradually increase retry interval
       } else {
-        console.log('UserCredits - Max retries reached, setting default credits');
-        // Set default credits to 0 after max retries to avoid perpetual loading state
-        setCredits(0)
+        console.log('UserCredits - Max retries reached, keeping last valid credits');
+        // 不再设置为0，而是保持最后一个有效值
         setIsLoading(false)
       }
     }
@@ -108,6 +109,7 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
     if (initialCredits !== undefined) {
       console.log('UserCredits - Using provided initialCredits:', initialCredits);
       setCredits(initialCredits);
+      setLastValidCredits(initialCredits);
       setIsLoading(false);
       return;
     }
@@ -141,9 +143,9 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
           // Add animation effect
           setIsUpdating(true)
           setTimeout(() => {
-            // 只使用payload中的credits字段
-            const newCredits = payload.new.credits || 0;
+            const newCredits = payload.new.credits || lastValidCredits || 0;
             setCredits(newCredits)
+            setLastValidCredits(newCredits)
             setIsUpdating(false)
           }, 300)
         })
@@ -217,6 +219,9 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
     return null
   }
   
+  // 在显示积分时，优先使用当前积分，如果为null则使用最后一个有效值
+  const displayCredits = credits !== null ? credits : (lastValidCredits !== null ? lastValidCredits : 0);
+
   return (
     <TooltipProvider>
       <div className="flex items-center gap-2">
@@ -225,7 +230,7 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
             <div className={`flex items-center gap-1.5 bg-bg-200 text-text-100 px-3 py-1.5 rounded-full transition-all ${isUpdating ? 'scale-110' : ''}`}>
               <CreditCard className="h-3.5 w-3.5 text-primary-100" />
               <span className={`font-medium text-sm transition-all ${isUpdating ? 'text-primary-100' : ''}`}>
-                {credits}
+                {displayCredits}
               </span>
               <span className="text-xs text-text-200">credits</span>
             </div>

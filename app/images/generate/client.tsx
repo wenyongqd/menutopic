@@ -916,14 +916,45 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                // 创建一个临时的a标签来下载图片
-                                const link = document.createElement('a');
-                                link.href = generatedImage;
-                                link.download = `generated-image-${Date.now()}.png`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
+                              onClick={async () => {
+                                try {
+                                  // 显示下载中状态
+                                  toast({
+                                    title: "Downloading...",
+                                    description: "Preparing your image for download",
+                                  });
+
+                                  // 获取图片数据
+                                  const response = await fetch(generatedImage);
+                                  const blob = await response.blob();
+                                  
+                                  // 创建一个临时的 Blob URL
+                                  const blobUrl = URL.createObjectURL(blob);
+                                  
+                                  // 创建一个临时的a标签来下载图片
+                                  const link = document.createElement('a');
+                                  link.href = blobUrl;
+                                  link.download = `generated-image-${Date.now()}.png`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  
+                                  // 清理 Blob URL
+                                  URL.revokeObjectURL(blobUrl);
+
+                                  toast({
+                                    title: "Success",
+                                    description: "Image downloaded successfully",
+                                    variant: "success",
+                                  });
+                                } catch (error) {
+                                  console.error("Error downloading image:", error);
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to download image. Please try again.",
+                                    variant: "destructive",
+                                  });
+                                }
                               }}
                               className="flex items-center gap-2"
                             >

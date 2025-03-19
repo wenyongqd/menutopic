@@ -6,14 +6,17 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { CheckCircle, ArrowRight, CreditCard } from 'lucide-react'
+import { useAuth } from '@/components/providers/auth-provider'
 
 // 创建一个内部组件来使用 useSearchParams
 function SuccessPageContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [credits, setCredits] = useState<number | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const { refreshData } = useAuth()
   
   const sessionId = searchParams.get('session_id')
   const isMock = searchParams.get('mock') === 'true'
@@ -40,11 +43,21 @@ function SuccessPageContent() {
         const response = await fetch(`/api/checkout/verify?session_id=${sessionId}`)
         
         if (!response.ok) {
+          // 如果是认证错误且重试次数小于3，等待一秒后重试
+          if (response.status === 401 && retryCount < 3) {
+            console.log(`Retry attempt ${retryCount + 1} for session verification`)
+            setRetryCount(prev => prev + 1)
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            return verifyPayment()
+          }
           throw new Error('Failed to verify payment')
         }
         
         const data = await response.json()
         setCredits(data.credits || 0)
+        
+        // 刷新认证状态
+        refreshData()
       } catch (error) {
         console.error('Verification error:', error)
         toast({
@@ -58,7 +71,7 @@ function SuccessPageContent() {
     }
     
     verifyPayment()
-  }, [sessionId, router, toast, isMock, searchParams])
+  }, [sessionId, router, toast, isMock, searchParams, retryCount, refreshData])
   
   if (isLoading) {
     return (

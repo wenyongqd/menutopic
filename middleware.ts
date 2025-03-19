@@ -22,6 +22,9 @@ const publicRoutes = [
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname
   
+  // 检查是否是支付成功页面
+  const isSuccessPage = path.startsWith('/credits/success')
+  
   // 跳过对静态资源的处理
   if (path.includes('_next') || 
       path.includes('favicon.ico') || 
@@ -72,6 +75,18 @@ export async function middleware(req: NextRequest) {
           cookie.name.includes('supabase.auth')
         )
         
+        // 如果是支付成功页面且有认证cookie，给予更多时间等待会话建立
+        if (isSuccessPage && hasAuthCookie) {
+          console.log('Middleware - Payment success page, allowing temporary access')
+          // 设置一个临时cookie来标记支付成功状态
+          res.cookies.set('payment_success', 'true', {
+            httpOnly: true,
+            maxAge: 300, // 5分钟
+            path: '/',
+          })
+          return res
+        }
+        
         // 如果有认证 cookie 但没有会话，可能是会话正在建立中
         if (hasAuthCookie) {
           console.log('Middleware - Auth cookies found but no session, session might be establishing')
@@ -99,7 +114,7 @@ export async function middleware(req: NextRequest) {
     console.log(`Middleware - Default case, allowing access to: ${path}`)
     return res
   } catch (error) {
-    console.error('Middleware - Unexpected error:', error)
+    console.error('Middleware error:', error)
     return NextResponse.next()
   }
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
+import { cookies } from 'next/headers'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 
 // 标记为动态路由
 export const dynamic = 'force-dynamic'
@@ -20,7 +22,20 @@ export async function GET(req: Request) {
     if (!sessionId) {
       return new NextResponse('Missing session ID', { status: 400 })
     }
-    
+
+    // 获取当前用户会话
+    const cookieStore = cookies()
+    const authClient = createRouteHandlerClient({ cookies: () => cookieStore })
+    const { data: { session }, error: sessionError } = await authClient.auth.getSession()
+
+    if (sessionError) {
+      console.error('Session error:', sessionError)
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Authentication error'
+      }, { status: 401 })
+    }
+
     // 如果是模拟会话，直接返回成功
     if (sessionId === 'test_session') {
       const mockCredits = parseInt(searchParams.get('credits') || '0')
@@ -42,24 +57,32 @@ export async function GET(req: Request) {
     
     try {
       // 从 Stripe 获取会话信息
-      const session = await stripe.checkout.sessions.retrieve(sessionId)
+      const stripeSession = await stripe.checkout.sessions.retrieve(sessionId)
       
-      if (session.payment_status !== 'paid') {
+      if (stripeSession.payment_status !== 'paid') {
         return NextResponse.json({ 
           success: false, 
           error: 'Payment not completed'
         }, { status: 400 })
       }
       
-      const userId = session.metadata?.userId
-      const packageId = session.metadata?.packageId
-      const credits = parseInt(session.metadata?.credits || '0')
+      const userId = stripeSession.metadata?.userId
+      const packageId = stripeSession.metadata?.packageId
+      const credits = parseInt(stripeSession.metadata?.credits || '0')
       
       if (!userId || !packageId || !credits) {
         return NextResponse.json({ 
           success: false, 
           error: 'Missing metadata'
         }, { status: 400 })
+      }
+
+      // 验证用户身份
+      if (!session?.user || session.user.id !== userId) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'User mismatch'
+        }, { status: 401 })
       }
       
       // 检查交易是否已经处理过

@@ -105,7 +105,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
   }, [user, router]);
 
   // Enhanced navigation handler with loading state
-  const handleNavigation = (path: string) => {
+  const handleNavigation = async (path: string) => {
     setIsNavigating(true);
     console.log(`Header - Navigating to ${path}`);
     
@@ -116,18 +116,10 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
     
     // 对于导航到受保护页面，先确保用户已认证
     if (path === '/dashboard' || path.startsWith('/images/') || path.startsWith('/credits/')) {
-      // 先确保用户数据已刷新
-      refreshData();
-      
-      // 对于 /images/generate 页面，我们使用特殊处理
-      if (path === '/images/generate') {
-        console.log('Header - Using special navigation for generate page');
-        
-        // 1. 使用 window.location 而不是 router.push，确保页面完全重载
-        // 这样可以避免客户端导航造成的状态问题
-        window.location.href = path;
-        return; // 提前返回，不执行后续代码
-      }
+      // 对于所有受保护的页面，使用 window.location 导航以确保完整的页面刷新
+      console.log('Header - Protected page detected, using full page refresh');
+      window.location.href = path;
+      return;
     }
     
     // 导航到请求路径

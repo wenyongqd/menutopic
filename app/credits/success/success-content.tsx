@@ -13,6 +13,7 @@ interface PaymentData {
   success: boolean
   sessionId: string
   purchasedCredits: number
+  previousCredits: number
   currentCredits: number
   error: string | null
 }
@@ -155,7 +156,7 @@ export function SuccessContent({ paymentData, isMock }: SuccessContentProps) {
               className="flex justify-between items-center"
             >
               <span className="text-text-200">Previous Balance:</span>
-              <span className="font-bold text-xl">{paymentData.currentCredits - paymentData.purchasedCredits}</span>
+              <span className="font-bold text-xl">{paymentData.previousCredits}</span>
             </motion.div>
             <motion.div 
               initial={{ opacity: 0, x: -20 }}

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { stripe } from '@/lib/stripe'
-import { cookies } from 'next/headers'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 
 // 标记为动态路由
 export const dynamic = 'force-dynamic'
@@ -29,6 +27,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ 
         success: true, 
         credits: mockCredits,
+        previousCredits: 0,
+        totalCredits: mockCredits,
         mock: true
       })
     }
@@ -67,15 +67,24 @@ export async function GET(req: Request) {
       // 检查交易是否已经处理过
       const { data: existingTransaction } = await supabase
         .from('credit_transactions')
-        .select('id')
+        .select('id, amount')
         .eq('stripe_session_id', sessionId)
         .single()
       
       if (existingTransaction) {
-        // 交易已经处理过，直接返回成功
+        // 交易已经处理过，获取用户当前积分
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('credits')
+          .eq('id', userId)
+          .single()
+
+        // 返回正确的积分信息
         return NextResponse.json({ 
           success: true, 
-          credits,
+          credits: existingTransaction.amount,
+          previousCredits: (profile?.credits || 0) - existingTransaction.amount,
+          totalCredits: profile?.credits || 0,
           alreadyProcessed: true
         })
       }
@@ -93,6 +102,25 @@ export async function GET(req: Request) {
           await supabase
             .from('user_profiles')
             .insert({ id: userId, credits })
+
+          // 记录交易
+          await supabase
+            .from('credit_transactions')
+            .insert({
+              user_id: userId,
+              amount: credits,
+              type: 'purchase',
+              stripe_session_id: sessionId,
+              description: `Purchased ${credits} credits`
+            })
+
+          return NextResponse.json({ 
+            success: true, 
+            credits,
+            previousCredits: 0,
+            totalCredits: credits,
+            userId
+          })
         } else {
           throw profileError
         }
@@ -112,41 +140,26 @@ export async function GET(req: Request) {
           .from('user_profiles')
           .update({ credits: newCredits })
           .eq('id', userId)
-      }
-      
-      // 记录交易
-      await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: userId,
-          amount: credits,
-          type: 'purchase',
-          stripe_session_id: sessionId,
-          description: `Purchased ${credits} credits`
-        })
 
-      // 创建一个新的认证会话
-      const cookieStore = cookies()
-      const authClient = createRouteHandlerClient({ cookies: () => cookieStore })
-      
-      try {
-        // 尝试使用现有会话
-        const { data: { session }, error: sessionError } = await authClient.auth.getSession()
-        
-        if (sessionError || !session) {
-          // 如果没有有效会话，创建一个新的
-          await authClient.auth.refreshSession()
-        }
-      } catch (authError) {
-        console.error('Auth refresh error:', authError)
-        // 继续处理，因为支付已经完成
+        // 记录交易
+        await supabase
+          .from('credit_transactions')
+          .insert({
+            user_id: userId,
+            amount: credits,
+            type: 'purchase',
+            stripe_session_id: sessionId,
+            description: `Purchased ${credits} credits`
+          })
+
+        return NextResponse.json({ 
+          success: true, 
+          credits,
+          previousCredits: currentCredits,
+          totalCredits: newCredits,
+          userId
+        })
       }
-      
-      return NextResponse.json({ 
-        success: true, 
-        credits,
-        userId // 返回用户ID以便前端处理
-      })
     } catch (stripeError: Error | unknown) {
       console.error('Stripe error:', stripeError)
       return NextResponse.json({ 

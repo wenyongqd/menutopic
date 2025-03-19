@@ -1,13 +1,9 @@
 import { Suspense } from 'react'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SuccessContent } from './success-content'
 
 async function getPaymentData(sessionId: string) {
   try {
-    const supabase = createServerComponentClient({ cookies })
-
     // 验证支付会话
     const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/checkout/verify?session_id=${sessionId}`, {
       cache: 'no-store'
@@ -23,35 +19,12 @@ async function getPaymentData(sessionId: string) {
       throw new Error(data.error || 'Verification failed')
     }
 
-    // 获取用户信息
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      throw new Error('User not found')
-    }
-
-    // 获取用户配置文件
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('credits')
-      .eq('id', user.id)
-      .single()
-
-    // 获取交易记录，检查是否已经处理过这笔交易
-    const { data: transaction } = await supabase
-      .from('credit_transactions')
-      .select('amount')
-      .eq('stripe_session_id', sessionId)
-      .single()
-
-    // 如果找到交易记录，说明已经处理过这笔交易
-    const currentCredits = profile?.credits || 0
-    const purchasedCredits = transaction ? transaction.amount : data.credits
-
     return {
       success: true,
       sessionId,
-      purchasedCredits,
-      currentCredits,
+      purchasedCredits: data.credits,
+      previousCredits: data.previousCredits,
+      currentCredits: data.totalCredits,
       error: null
     }
   } catch (error) {
@@ -60,6 +33,7 @@ async function getPaymentData(sessionId: string) {
       success: false,
       sessionId,
       purchasedCredits: 0,
+      previousCredits: 0,
       currentCredits: 0,
       error: error instanceof Error ? error.message : 'Unknown error'
     }
@@ -83,6 +57,7 @@ export default async function SuccessPage({
         success: true,
         sessionId: 'mock',
         purchasedCredits: parseInt(searchParams.credits as string || '0'),
+        previousCredits: parseInt(searchParams.credits as string || '0'),
         currentCredits: parseInt(searchParams.credits as string || '0'),
         error: null
       }

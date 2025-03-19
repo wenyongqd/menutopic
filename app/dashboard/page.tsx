@@ -16,24 +16,36 @@ export default async function Dashboard() {
   // Get the user
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    redirect('/login');
+  // 如果获取用户信息时出错，不要立即重定向
+  if (userError) {
+    console.error('Dashboard - Error fetching user:', userError);
   }
 
-  // Get the user's profile
+  // 即使没有用户，也先获取数据，让客户端决定如何处理
   const { data: profile } = await supabase
     .from('user_profiles')
     .select('*')
-    .eq('id', user.id)
+    .eq('id', user?.id || '')
     .single();
 
   // Get recent images
   const { data: recentImages } = await supabase
     .from('image_generations')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', user?.id || '')
     .order('created_at', { ascending: false })
     .limit(10);
+
+  // 如果完全没有用户信息，再重定向
+  if (!user && !profile) {
+    console.log('Dashboard - No user data found, redirecting to login');
+    redirect('/login');
+  }
+
+  if (!user) {
+    console.log('Dashboard - User required but not found');
+    redirect('/login');
+  }
 
   return (
     <Suspense fallback={<DashboardSkeleton />}>

@@ -615,12 +615,17 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         img.onload = async () => {
           console.log("URL validation successful, updating UI");
           
-          // 立即扣除积分并获取新的积分值
-          const newCredits = userCredits - CREDITS_PER_IMAGE;
-          setUserCredits(newCredits);
-          
-          // 同时更新数据库中的积分
           try {
+            // 立即扣除积分并获取新的积分值
+            const newCredits = userCredits - CREDITS_PER_IMAGE;
+            
+            // 先更新UI状态，确保用户看到即时反馈
+            setIsGenerating(false);
+            setGeneratedImage(imageUrl);
+            setShowConfirmation(true);
+            setUserCredits(newCredits);
+            
+            // 然后更新数据库中的积分
             if (user) {
               const { error } = await createClient()
                 .from("user_profiles")
@@ -630,31 +635,58 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
               if (error) {
                 console.error("Failed to update credits in database:", error);
                 // 即使数据库更新失败，我们也保持本地状态的更新
+                toast({
+                  title: "Warning",
+                  description: "Credits were deducted but failed to update in database. Please refresh the page.",
+                  variant: "destructive",
+                });
+              } else {
+                toast({
+                  title: "Success",
+                  description: `Image generated successfully! ${CREDITS_PER_IMAGE} credits have been deducted.`,
+                  variant: "success",
+                });
               }
             }
-          } catch (creditError) {
-            console.error("Error updating credits:", creditError);
+          } catch (error) {
+            console.error("Error in credit update process:", error);
+            toast({
+              title: "Error",
+              description: "Failed to update credits. Please refresh the page.",
+              variant: "destructive",
+            });
           }
-          
-          setIsGenerating(false);
-          setGeneratedImage(imageUrl);
-          setShowConfirmation(true);
-          toast({
-            title: "Success",
-            description: `Image generated successfully! ${CREDITS_PER_IMAGE} credits have been deducted.`,
-            variant: "success",
-          });
         };
+        
         img.onerror = () => {
           console.error("URL validation failed:", imageUrl);
+          setIsGenerating(false); // 确保生成状态被重置
           toast({
             title: "Error",
             description: "Generated URL is invalid. Please try the emergency recovery button.",
             variant: "destructive",
           });
         };
+        
+        // 设置超时处理
+        const timeoutId = setTimeout(() => {
+          if (!img.complete) {
+            console.error("Image load timeout");
+            setIsGenerating(false);
+            toast({
+              title: "Error",
+              description: "Image loading timed out. Please try the emergency recovery button.",
+              variant: "destructive",
+            });
+          }
+        }, 30000); // 30秒超时
+        
         img.src = imageUrl;
+        
+        // 清理超时
+        return () => clearTimeout(timeoutId);
       } else {
+        setIsGenerating(false); // 确保生成状态被重置
         throw new Error("No valid image URL found in response");
       }
     } catch (error) {

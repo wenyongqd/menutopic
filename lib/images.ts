@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase";
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 export interface ImageGeneration {
   id: string;
@@ -13,13 +14,24 @@ export interface ImageGeneration {
 }
 
 export async function getRecentImages(userId: string): Promise<ImageGeneration[]> {
-  const supabase = createClient();
+  // Create admin client to bypass RLS
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
   
   try {
-    const { data: recentImages, error } = await supabase
+    const { data: recentImages, error } = await supabaseAdmin
       .from('image_generations')
       .select('*')
       .eq('user_id', userId)
+      .eq('status', 'completed')  // Only get completed images
       .order('created_at', { ascending: false })
       .limit(10);
 

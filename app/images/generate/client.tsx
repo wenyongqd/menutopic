@@ -509,6 +509,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       return;
     }
 
+    // 确保用户有足够的积分
     if (userCredits < CREDITS_PER_IMAGE) {
       toast({
         title: "Insufficient Credits",
@@ -516,6 +517,40 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         variant: "destructive",
       });
       return;
+    }
+
+    // 先从数据库获取最新积分
+    try {
+      if (user) {
+        const { data: currentProfile, error } = await createClient()
+          .from("user_profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) {
+          console.error("Failed to fetch current credits:", error);
+        } else {
+          // 使用数据库中的最新积分
+          const currentCredits = currentProfile?.credits !== undefined
+            ? currentProfile.credits
+            : currentProfile?.credit_amount || 0;
+          
+          if (currentCredits < CREDITS_PER_IMAGE) {
+            toast({
+              title: "Insufficient Credits",
+              description: `You need ${CREDITS_PER_IMAGE} credits to generate an image. Please purchase more credits.`,
+              variant: "destructive",
+            });
+            setUserCredits(currentCredits); // 更新显示的积分
+            return;
+          }
+          
+          setUserCredits(currentCredits); // 更新显示的积分
+        }
+      }
+    } catch (creditError) {
+      console.error("Error checking credits:", creditError);
     }
 
     setIsGenerating(true);
@@ -612,8 +647,35 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         console.log("Final imageUrl to be used:", imageUrl.substring(0, 50) + "...");
         // 验证URL是否可访问
         const img = new window.Image();
-        img.onload = () => {
+        img.onload = async () => {
           console.log("URL validation successful, updating UI");
+          
+          // 立即更新用户积分
+          setUserCredits(prev => prev - CREDITS_PER_IMAGE);
+          
+          // 同时更新数据库中的积分
+          try {
+            if (user) {
+              const { data: updatedProfile, error } = await createClient()
+                .from("user_profiles")
+                .select("*")
+                .eq("id", user.id)
+                .single();
+
+              if (error) {
+                console.error("Failed to fetch updated credits:", error);
+              } else {
+                // 使用数据库中的最新积分
+                const updatedCredits = updatedProfile?.credits !== undefined
+                  ? updatedProfile.credits
+                  : updatedProfile?.credit_amount || 0;
+                setUserCredits(updatedCredits);
+              }
+            }
+          } catch (creditError) {
+            console.error("Error updating credits:", creditError);
+          }
+
           setIsGenerating(false);
           setGeneratedImage(imageUrl);
           setShowConfirmation(true);

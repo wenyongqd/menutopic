@@ -27,14 +27,12 @@ export function SuccessContent({ paymentData, isMock }: SuccessContentProps) {
   const { refreshData } = useAuth()
   const { updateCredits } = useCredits()
   
-  const totalCredits = paymentData.currentCredits + paymentData.purchasedCredits
-  
   useEffect(() => {
     if (paymentData.success) {
-      updateCredits(totalCredits)
+      updateCredits(paymentData.currentCredits)
       refreshData()
     }
-  }, [paymentData, updateCredits, refreshData, totalCredits])
+  }, [paymentData, updateCredits, refreshData])
   
   if (!paymentData.success) {
     return (
@@ -154,36 +152,24 @@ export function SuccessContent({ paymentData, isMock }: SuccessContentProps) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.7 }}
-              className="flex flex-col space-y-2"
+              className="flex justify-between items-center"
             >
-              <div className="flex justify-between items-center text-text-200">
-                <span>Previous Credits:</span>
-                <span>{paymentData.currentCredits}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-text-200">Total Credits:</span>
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.8, type: "spring" }}
-                  className="flex items-center space-x-1"
-                >
-                  <span className="font-bold text-xl text-green-600">{totalCredits}</span>
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
-                    className="text-xs text-green-500"
-                  >
-                    (Updated)
-                  </motion.span>
-                </motion.div>
-              </div>
+              <span className="text-text-200">Previous Balance:</span>
+              <span className="font-bold text-xl">{paymentData.currentCredits - paymentData.purchasedCredits}</span>
             </motion.div>
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.8 }}
+              className="flex justify-between items-center bg-gray-50 p-4 rounded-lg"
+            >
+              <span className="text-text-200 font-medium">New Total:</span>
+              <span className="font-bold text-2xl text-gray-900">{paymentData.currentCredits}</span>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.9 }}
               className="flex justify-between items-center"
             >
               <span className="text-text-200">Transaction ID:</span>
@@ -195,7 +181,7 @@ export function SuccessContent({ paymentData, isMock }: SuccessContentProps) {
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.9 }}
+                transition={{ delay: 1 }}
                 className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800"
               >
                 This is a mock transaction for testing purposes. No actual payment was processed.

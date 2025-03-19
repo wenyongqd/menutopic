@@ -36,11 +36,15 @@ async function getPaymentData(sessionId: string) {
       .eq('id', user.id)
       .single()
 
+    // 计算总积分：当前积分 + 新购买的积分
+    const currentCredits = profile?.credits || 0
+    const totalCredits = currentCredits + data.credits
+
     return {
       success: true,
       sessionId,
       purchasedCredits: data.credits,
-      currentCredits: profile?.credits || 0,
+      currentCredits: totalCredits, // 返回总积分
       error: null
     }
   } catch (error) {

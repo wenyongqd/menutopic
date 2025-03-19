@@ -32,7 +32,7 @@ export async function getRecentImages(userId: string): Promise<ImageGeneration[]
       .eq('user_id', userId)
       .eq('status', 'completed')  // Only get completed images
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(6);
 
     if (error) {
       console.error('Error fetching recent images:', error);

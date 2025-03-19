@@ -4,50 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { 
   ArrowRight, 
-  Star, 
-  Camera, 
-  Search, 
-  Download, 
-  Utensils, 
-  Image as ImageIcon, 
-  Zap,
+  Star,
   ChevronRight
 } from "lucide-react";
 import { useEffect, useState } from "react";
-
-// Sample data for features section
-const features = [
-  {
-    icon: <Camera className="h-6 w-6 text-primary-100" />,
-    title: "Menu Capture",
-    description: "Take a photo of any menu and instantly transform it into a visual guide."
-  },
-  {
-    icon: <ImageIcon className="h-6 w-6 text-primary-100" />,
-    title: "AI-Powered Visualization",
-    description: "Our AI generates images for each dish to help you make informed decisions."
-  },
-  {
-    icon: <Search className="h-6 w-6 text-primary-100" />,
-    title: "Easy Search",
-    description: "Quickly find dishes by name to explore options that match your preferences."
-  },
-  {
-    icon: <Download className="h-6 w-6 text-primary-100" />,
-    title: "Download Images",
-    description: "Save dish images individually or download all images in a convenient zip file."
-  },
-  {
-    icon: <Utensils className="h-6 w-6 text-primary-100" />,
-    title: "Detailed Information",
-    description: "View dish names, prices, and descriptions alongside visual representations."
-  },
-  {
-    icon: <Zap className="h-6 w-6 text-primary-100" />,
-    title: "Instant Processing",
-    description: "Get results in seconds with our powerful AI-driven menu parsing technology."
-  }
-];
+import { MenuImageGallery } from "@/components/menu-image-gallery";
 
 // Sample data for testimonials section
 const testimonials = [
@@ -72,11 +33,18 @@ const testimonials = [
 ];
 
 export default function LandingPage() {
+  const [mounted, setMounted] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   
   useEffect(() => {
+    setMounted(true);
     setIsLoaded(true);
   }, []);
+
+  // 在客户端渲染之前返回一个加载状态或空白内容
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="bg-gradient-to-b from-bg-100 to-white">
@@ -162,38 +130,20 @@ export default function LandingPage() {
           <div className="absolute right-0 bottom-1/4 w-64 h-64 rounded-full bg-accent-200/10 blur-3xl"></div>
           
           <div className="container mx-auto px-4 md:px-6 max-w-7xl relative z-10">
-            <div className="flex flex-col items-center justify-center space-y-4 text-center mb-20">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-primary-100/10 text-primary-100 text-sm font-medium mb-4">
                 <span className="flex h-2 w-2 rounded-full bg-primary-100 mr-2"></span>
-                Powerful Features
+                Menu Visualization
               </div>
               <h2 className="text-4xl font-bold tracking-tight text-text-100 md:text-5xl lg:text-6xl max-w-3xl">
-                Everything You Need to <span className="text-primary-100">Visualize Menus</span>
+                Transform Your Menu Into <span className="text-primary-100">Visual Delights</span>
               </h2>
               <p className="mx-auto max-w-[700px] text-text-200 md:text-xl mt-6">
-                Our platform offers a comprehensive suite of tools designed to enhance your dining experience and help you make informed choices.
+                See how our AI transforms menu items into beautiful, appetizing visuals that help you make informed dining decisions.
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
-              {features.map((feature, index) => (
-                <div
-                  key={index}
-                  className="group relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-500 border border-bg-300/20 hover:border-primary-100/30 overflow-hidden hover:translate-y-[-5px]"
-                >
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-primary-100/5 rounded-full -mr-20 -mt-20 group-hover:bg-primary-100/10 transition-all duration-500"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-accent-200/5 rounded-full -ml-10 -mb-10 group-hover:bg-accent-200/10 transition-all duration-500"></div>
-                  
-                  <div className="relative z-10">
-                    <div className="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-100/10 text-primary-100 group-hover:bg-primary-100 group-hover:text-white transition-all duration-500 shadow-sm group-hover:shadow-md">
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-xl font-bold text-text-100 mb-4 group-hover:text-primary-100 transition-colors">{feature.title}</h3>
-                    <p className="text-text-200 group-hover:text-text-100 transition-colors leading-relaxed">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <MenuImageGallery />
           </div>
         </section>
 

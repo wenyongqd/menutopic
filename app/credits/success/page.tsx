@@ -43,15 +43,15 @@ async function getPaymentData(sessionId: string) {
       .eq('stripe_session_id', sessionId)
       .single()
 
-    // 如果交易已经处理过，使用数据库中的当前积分作为总积分
+    // 如果找到交易记录，说明已经处理过这笔交易
     const currentCredits = profile?.credits || 0
-    const purchasedCredits = data.credits
+    const purchasedCredits = transaction ? transaction.amount : data.credits
 
     return {
       success: true,
       sessionId,
       purchasedCredits,
-      currentCredits, // 直接使用数据库中的当前积分
+      currentCredits,
       error: null
     }
   } catch (error) {

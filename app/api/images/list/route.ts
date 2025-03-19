@@ -1,59 +1,74 @@
-import { createClient } from "@/lib/supabase";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/types/supabase';
 
 // 标记为动态路由
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    // 获取查询参数
+    // 获取URL查询参数
     const { searchParams } = new URL(request.url);
     const source = searchParams.get('source');
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 10;
-
-    // 创建 Supabase 客户端
-    const supabase = createClient();
-
-    // 获取当前用户
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    
+    // Get current user
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
+    
+    const userId = user.id;
+    
+    // 创建具有 service_role 权限的客户端，绕过 RLS
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+    
     // 构建查询
-    let query = supabase
+    let query = supabaseAdmin
       .from('image_generations')
       .select('*, menu_parsings(id, item_count)')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
+      .eq('user_id', userId)
+      .eq('status', 'completed');
+    
     // 如果指定了来源，添加筛选条件
-    if (source && source !== 'all') {
+    if (source) {
       query = query.eq('source', source);
     }
-
+    
     // 执行查询
-    const { data: images, error } = await query;
-
+    const { data, error } = await query.order('created_at', { ascending: false });
+    
     if (error) {
-      console.error('Error fetching images:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch images' },
-        { status: 500 }
-      );
+      console.error('[IMAGES_LIST] Error:', error);
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Failed to fetch images',
+        error: error.message
+      }, { status: 500 });
     }
-
-    return NextResponse.json({ images: images || [] });
+    
+    return NextResponse.json({ 
+      success: true,
+      images: data
+    });
   } catch (error) {
-    console.error('Error in image list API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('[IMAGES_LIST] Unhandled error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      message: 'Internal server error' 
+    }, { status: 500 });
   }
 } 

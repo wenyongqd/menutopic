@@ -6,73 +6,50 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Button } from "@/components/ui/button";
 import { CreditCard, Image as ImageIcon, Plus, ArrowRight, Images } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCredits } from '@/components/providers/credits-provider';
-import Image from "next/image";
-import { ImageGeneration as ImageGenerationType } from "@/lib/images";
+import { ImageGeneration } from '@/lib/images';
+
+// 用户配置文件接口
+interface UserProfile {
+  id: string;
+  credits?: number;
+  credit_amount?: number;
+  // 其他可能的属性
+}
 
 interface DashboardClientProps {
   user: User;
+  profile?: UserProfile;
+  recentImages: ImageGeneration[];
 }
 
-export function DashboardClient({ user }: DashboardClientProps) {
+// 添加图片 URL 处理函数
+function getImageUrl(url: string) {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${url}`;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function DashboardClient({ user, profile, recentImages }: DashboardClientProps) {
   const { credits } = useCredits();
   const { user: clientUser, refreshData } = useAuth();
-  const [recentImages, setRecentImages] = useState<ImageGenerationType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   
+  // 在组件挂载时刷新认证状态
   useEffect(() => {
     console.log('DashboardClient - Component mounted, refreshing auth state');
     console.log('DashboardClient - Server user:', user?.id);
     console.log('DashboardClient - Client user:', clientUser?.id || 'null');
+    console.log('DashboardClient - Recent images:', recentImages.length);
     
+    // 如果客户端没有用户状态，但服务器有，则刷新认证状态
     if (!clientUser && user) {
       console.log('DashboardClient - Client state out of sync with server, refreshing');
       refreshData();
     }
-  }, [user, clientUser, refreshData]);
-
-  useEffect(() => {
-    async function fetchRecentImages() {
-      try {
-        const response = await fetch('/api/images/list?limit=6');
-        const data = await response.json();
-        
-        if (data.error) {
-          console.error('Error fetching recent images:', data.error);
-          return;
-        }
-
-        console.log('[DASHBOARD] Recent images loaded:', data.images.length);
-        setRecentImages(data.images);
-      } catch (error) {
-        console.error('Error fetching recent images:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchRecentImages();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} className="card overflow-hidden animate-pulse">
-              <div className="aspect-square bg-bg-200" />
-              <CardContent className="pt-4">
-                <div className="h-4 bg-bg-200 rounded w-3/4 mb-2" />
-                <div className="h-4 bg-bg-200 rounded w-1/2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  }, [user, clientUser, refreshData, recentImages.length]);
 
   return (
     <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
@@ -172,10 +149,9 @@ export function DashboardClient({ user }: DashboardClientProps) {
                 <Card className="card overflow-hidden hover:scale-[1.02] transition-transform">
                   <div className="aspect-square relative bg-bg-200 overflow-hidden">
                     {image.image_url ? (
-                      <Image
-                        src={image.image_url}
+                      <img
+                        src={getImageUrl(image.image_url)}
                         alt={image.prompt}
-                        fill
                         className="object-cover w-full h-full transition-transform hover:scale-105"
                         onError={(e) => {
                           console.error('Error loading image:', image.image_url);
@@ -198,15 +174,10 @@ export function DashboardClient({ user }: DashboardClientProps) {
                     <p className="text-sm line-clamp-2 font-medium">
                       {image.prompt}
                     </p>
-                    <div className="flex justify-between items-center mt-2">
-                      <p className="text-xs text-text-200 flex items-center">
-                        <Clock className="mr-1 h-3 w-3" />
-                        {new Date(image.created_at).toLocaleDateString()}
-                      </p>
-                      <p className="text-xs text-text-200">
-                        {image.credits_used} credits
-                      </p>
-                    </div>
+                    <p className="text-xs text-text-200 mt-2 flex items-center">
+                      <Clock className="mr-1 h-3 w-3" />
+                      {new Date(image.created_at).toLocaleDateString()}
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -265,10 +236,9 @@ export function DashboardClient({ user }: DashboardClientProps) {
                   >
                     <Card className="card overflow-hidden opacity-90 hover:opacity-100 hover:shadow-md transition-all">
                       <div className="aspect-square relative bg-bg-200 overflow-hidden">
-                        <Image
+                        <img
                           src={sample.imageUrl}
                           alt={sample.prompt}
-                          fill
                           className="object-cover w-full h-full transition-transform hover:scale-105"
                         />
                         <div className="absolute top-2 right-2 bg-bg-100/80 backdrop-blur-sm text-xs px-2 py-1 rounded-full text-text-200">

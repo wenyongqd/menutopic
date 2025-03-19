@@ -9,7 +9,19 @@ import Image from 'next/image';
 import { ArrowLeft, Download, Filter } from 'lucide-react';
 import { useToast } from '@/components/ui/toast';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImageGeneration } from "@/lib/images";
+
+interface ImageGeneration {
+  id: string;
+  created_at: string;
+  prompt: string;
+  image_url: string;
+  status: string;
+  source?: string;
+  menu_parsings?: {
+    id: string;
+    item_count: number;
+  } | null;
+}
 
 export default function GalleryPage() {
   const [images, setImages] = useState<ImageGeneration[]>([]);

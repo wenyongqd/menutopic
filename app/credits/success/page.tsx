@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase'
 // 创建一个内部组件来使用 useSearchParams
 function SuccessPageContent() {
   const [isLoading, setIsLoading] = useState(true)
+  const [isVerified, setIsVerified] = useState(false)
   const [credits, setCredits] = useState<number | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const router = useRouter()
@@ -30,12 +31,11 @@ function SuccessPageContent() {
     
     async function verifyPayment() {
       try {
-        setIsLoading(true)
-        
         // 如果是模拟模式，直接显示成功
         if (isMock) {
           const mockCredits = parseInt(searchParams.get('credits') || '0')
           setCredits(mockCredits)
+          setIsVerified(true)
           setIsLoading(false)
           return
         }
@@ -55,9 +55,11 @@ function SuccessPageContent() {
         }
         
         const data = await response.json()
+        console.log('Verification response:', data)
         
         if (data.success) {
           setCredits(data.credits || 0)
+          setIsVerified(true)
           
           // 如果当前没有用户会话，尝试恢复
           if (!user) {
@@ -111,7 +113,8 @@ function SuccessPageContent() {
     verifyPayment()
   }, [sessionId, router, toast, isMock, searchParams, retryCount, refreshData, user])
   
-  if (isLoading) {
+  // 如果正在加载且尚未验证，显示加载状态
+  if (isLoading && !isVerified) {
     return (
       <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
         <div className="flex flex-col items-center justify-center space-y-4">
@@ -123,6 +126,32 @@ function SuccessPageContent() {
     )
   }
   
+  // 如果验证失败但不再加载，显示错误状态
+  if (!isVerified && !isLoading) {
+    return (
+      <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="h-20 w-20 rounded-full bg-red-100 flex items-center justify-center">
+            <CheckCircle className="h-12 w-12 text-red-500" />
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-text-100 text-center">
+            Verification Failed
+          </h1>
+          <p className="text-text-200 text-lg text-center max-w-lg">
+            We were unable to verify your payment. Please contact support.
+          </p>
+          <Button 
+            className="mt-4"
+            onClick={() => router.push('/dashboard')}
+          >
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
+    )
+  }
+  
+  // 如果验证成功，显示成功状态
   return (
     <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
       <div className="flex flex-col items-center justify-center space-y-4 fade-in">

@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { User } from '@supabase/supabase-js'
-import { CreditCard, Package, ShoppingCart, Sparkles, Shield, ArrowRight, Check } from 'lucide-react'
+import { CreditCard, Package, ShoppingCart, Sparkles, Shield, ArrowRight, Check, Wallet } from 'lucide-react'
 import Link from 'next/link'
+import { useCredits } from '@/components/providers/credits-provider'
 
 interface CreditPackage {
   id: string
@@ -24,6 +25,7 @@ interface PurchaseClientProps {
 }
 
 export function PurchaseClient({ user, initialPackages }: PurchaseClientProps) {
+  const { credits } = useCredits();
   const [packages, setPackages] = useState<CreditPackage[]>(initialPackages || [])
   const [isLoading, setIsLoading] = useState(false)
   const [isPurchasing, setIsPurchasing] = useState(false)
@@ -162,7 +164,10 @@ export function PurchaseClient({ user, initialPackages }: PurchaseClientProps) {
         {/* Skeleton for header */}
         <div className="space-y-2">
           <div className="h-10 w-3/4 bg-bg-200 rounded-lg animate-pulse"></div>
-          <div className="h-6 w-1/2 bg-bg-200 rounded-lg animate-pulse"></div>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="h-6 w-1/2 bg-bg-200 rounded-lg animate-pulse"></div>
+            <div className="h-10 w-48 bg-bg-200 rounded-lg animate-pulse"></div>
+          </div>
         </div>
 
         {/* Skeleton for packages */}
@@ -248,9 +253,16 @@ export function PurchaseClient({ user, initialPackages }: PurchaseClientProps) {
         <h1 className="text-3xl md:text-4xl font-bold text-text-100">
           Purchase Credits
         </h1>
-        <p className="text-text-200 text-lg">
-          Select a credit package that suits your needs and start creating amazing images
-        </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <p className="text-text-200 text-lg">
+            Select a credit package that suits your needs and start creating amazing images
+          </p>
+          <div className="flex items-center bg-bg-100 rounded-lg px-4 py-2 border border-bg-200">
+            <Wallet className="h-5 w-5 text-primary-100 mr-2" />
+            <span className="text-text-100">Current Credits: </span>
+            <span className="font-bold text-primary-100 ml-2">{credits}</span>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 fade-in" style={{ animationDelay: "0.1s" }}>

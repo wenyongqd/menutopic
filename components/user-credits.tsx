@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { getUserCredits } from '@/lib/supabase'
 import { useAuth } from '@/components/providers/auth-provider'
+import { useCredits } from '@/components/providers/credits-provider'
 import { Button } from '@/components/ui/button'
 import { CreditCard, Plus, Loader2 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -14,7 +15,7 @@ interface UserCreditsProps {
 }
 
 export function UserCredits({ initialCredits }: UserCreditsProps) {
-  const [credits, setCredits] = useState<number | null>(initialCredits ?? null)
+  const { credits, setCredits } = useCredits();
   const [lastValidCredits, setLastValidCredits] = useState<number | null>(initialCredits ?? null)
   const [isLoading, setIsLoading] = useState(initialCredits === undefined)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -39,26 +40,25 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
     try {
       console.log('UserCredits - Fetching credits for user:', user?.id || 'unknown (protected path)');
       
-      // Add a longer delay before fetching to ensure auth is properly initialized
-      if (retryCount === 0) {
-        console.log('UserCredits - Adding initial delay before fetch');
-        await new Promise(r => setTimeout(r, 1500)); // 延长到1.5秒等待
-      }
-      
-      // 如果没有用户但在保护路径上，使用更耐心的重试策略
+      // 如果没有用户但在保护路径上，等待更长时间让认证完成
       if (!user && isProtectedPath) {
-        console.log(`UserCredits - On protected path without user (attempt ${retryCount + 1}/5), trying again`);
+        console.log('UserCredits - Waiting for auth to complete before fetching credits');
+        await new Promise(r => setTimeout(r, 2000)); // 等待2秒让认证完成
         
-        if (retryCount < 4) { // 最多重试4次
+        // 如果等待后仍然没有用户，且还有重试次数，则继续重试
+        if (!user && retryCount < 2) { // 减少重试次数到2次
+          console.log(`UserCredits - Still no user after waiting (attempt ${retryCount + 1}/2), trying again`);
           setTimeout(() => {
             fetchCredits(retryCount + 1)
-          }, 1000 * (retryCount + 1));
+          }, 2000); // 增加重试间隔到2秒
           return;
         }
         
-        console.log('UserCredits - Max retries reached, keeping last valid credits');
-        setIsLoading(false);
-        return;
+        if (!user) {
+          console.log('UserCredits - Max retries reached or auth timeout, keeping last valid credits');
+          setIsLoading(false);
+          return;
+        }
       }
       
       // 确保user存在
@@ -73,11 +73,11 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
       console.log('UserCredits - Credits fetched:', userCredits);
       
       // 如果 userCredits 为 null，尝试重试
-      if (userCredits === null && retryCount < 4) {
-        console.log(`UserCredits - Null credits returned, retrying (${retryCount + 1}/5)`);
+      if (userCredits === null && retryCount < 2) { // 减少重试次数到2次
+        console.log(`UserCredits - Null credits returned, retrying (${retryCount + 1}/2)`);
         setTimeout(() => {
           fetchCredits(retryCount + 1)
-        }, 1000 * (retryCount + 1));
+        }, 2000);
         return;
       }
       
@@ -90,14 +90,13 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
     } catch (error) {
       console.error('UserCredits - Failed to fetch credits:', error)
       // If failed and still have retry attempts, wait and retry
-      if (retryCount < 4) { // 最多重试4次
-        console.log(`UserCredits - Retrying fetch (${retryCount + 1}/5) in ${1000 * (retryCount + 1)}ms`);
+      if (retryCount < 2) { // 减少重试次数到2次
+        console.log(`UserCredits - Retrying fetch (${retryCount + 1}/2) in 2000ms`);
         setTimeout(() => {
           fetchCredits(retryCount + 1)
-        }, 1000 * (retryCount + 1)) // Gradually increase retry interval
+        }, 2000) // 增加重试间隔到2秒
       } else {
         console.log('UserCredits - Max retries reached, keeping last valid credits');
-        // 不再设置为0，而是保持最后一个有效值
         setIsLoading(false)
       }
     }
@@ -114,12 +113,17 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
       return;
     }
     
-    if (user || isProtectedPath) {
-      fetchCredits()
-    } else {
-      setIsLoading(false)
-    }
-  }, [user, isProtectedPath, initialCredits])
+    // 添加延迟，等待认证完成
+    const timer = setTimeout(() => {
+      if (user || isProtectedPath) {
+        fetchCredits()
+      } else {
+        setIsLoading(false)
+      }
+    }, 1000); // 等待1秒再开始获取积分
+    
+    return () => clearTimeout(timer);
+  }, [user, isProtectedPath, initialCredits, setCredits])
   
   // Set up real-time listener for credit changes
   useEffect(() => {
@@ -156,7 +160,7 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
         supabase.removeChannel(channel)
       }
     }
-  }, [user])
+  }, [user, setCredits])
   
   const handleBuyCredits = () => {
     // Set navigation state
@@ -219,7 +223,7 @@ export function UserCredits({ initialCredits }: UserCreditsProps) {
     return null
   }
   
-  // 在显示积分时，优先使用当前积分，如果为null则使用最后一个有效值
+  // 在显示积分时，优先使用context中的credits
   const displayCredits = credits !== null ? credits : (lastValidCredits !== null ? lastValidCredits : 0);
 
   return (

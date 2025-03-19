@@ -1,36 +1,45 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { createClient } from "@/lib/supabase";
+import { DashboardClient } from "./client";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { getServerUserProfile, getServerUserCredits, getServerUserRecentImages } from "@/app/actions";
-import { DashboardClient } from "./client";
 
 // 服务器组件，用于获取数据
-export default async function DashboardPage() {
-  // 获取用户信息
-  const userProfile = await getServerUserProfile();
-  
-  // 如果用户未登录，重定向到登录页面
-  if (!userProfile) {
-    redirect('/login?redirect=/dashboard');
+export default async function Dashboard() {
+  const supabase = createClient();
+
+  // Get the user
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect('/login');
   }
-  
-  // 获取用户积分
-  const credits = await getServerUserCredits();
-  
-  // 获取用户最近的图片生成
-  const recentImages = await getServerUserRecentImages(5);
-  
+
+  // Get the user's profile
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  // Get recent images
+  const { data: recentImages } = await supabase
+    .from('image_generations')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      <DashboardClient 
-        user={userProfile.user}
-        profile={userProfile.profile}
-        credits={credits || 0}
+      <DashboardClient
+        user={user}
+        profile={profile || undefined}
         recentImages={recentImages || []}
       />
     </Suspense>

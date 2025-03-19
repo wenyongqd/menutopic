@@ -8,6 +8,7 @@ import { CreditCard, Image as ImageIcon, Plus, ArrowRight, Images } from "lucide
 import Link from "next/link";
 import { useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useCredits } from '@/components/providers/credits-provider';
 
 // 仅保留使用的接口定义
 interface ImageGeneration {
@@ -29,13 +30,13 @@ interface UserProfile {
 
 interface DashboardClientProps {
   user: User;
-  profile?: UserProfile; // 标记为可选
-  credits: number;
+  profile?: UserProfile;
   recentImages: ImageGeneration[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function DashboardClient({ user, profile, credits, recentImages }: DashboardClientProps) {
+export function DashboardClient({ user, profile, recentImages }: DashboardClientProps) {
+  const { credits } = useCredits();
   const { user: clientUser, refreshData } = useAuth();
   
   // 在组件挂载时刷新认证状态

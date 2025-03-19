@@ -42,6 +42,7 @@ import { motion } from "framer-motion";
 import { MenuItem } from "./types";
 import Dropzone from "react-dropzone";
 import { AnimatedTitle } from "@/components/animated-title";
+import { useCredits } from '@/components/providers/credits-provider';
 
 interface GenerateClientProps {
   user: User;
@@ -49,9 +50,9 @@ interface GenerateClientProps {
 }
 
 export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
+  const { credits, updateCredits } = useCredits();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [userCredits, setUserCredits] = useState(initialCredits);
   const [isLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -217,24 +218,19 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
             if (error) {
               console.error("Failed to fetch updated credits:", error);
             } else {
-              // Update the credits with the value from the database
               const updatedCredits =
                 updatedProfile?.credits !== undefined
                   ? updatedProfile.credits
                   : updatedProfile?.credit_amount || 0;
-              setUserCredits(updatedCredits);
+              updateCredits(updatedCredits);
             }
           } else {
-            console.error(
-              "User not found when trying to fetch updated credits"
-            );
-            // Still update the local state as a fallback
-            setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
+            console.error("User not found when trying to fetch updated credits");
+            updateCredits(credits - CREDITS_PER_IMAGE);
           }
         } catch (creditFetchError) {
           console.error("Error fetching updated credits:", creditFetchError);
-          // Still update the local state as a fallback
-          setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
+          updateCredits(credits - CREDITS_PER_IMAGE);
         }
 
         // 更新状态和菜单数据
@@ -341,22 +337,19 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
           if (error) {
             console.error("Failed to fetch updated credits:", error);
           } else {
-            // Update the credits with the value from the database
             const updatedCredits =
               updatedProfile?.credits !== undefined
                 ? updatedProfile.credits
                 : updatedProfile?.credit_amount || 0;
-            setUserCredits(updatedCredits);
+            updateCredits(updatedCredits);
           }
         } else {
           console.error("User not found when trying to fetch updated credits");
-          // Still update the local state as a fallback
-          setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
+          updateCredits(credits - CREDITS_PER_IMAGE);
         }
       } catch (creditFetchError) {
         console.error("Error fetching updated credits:", creditFetchError);
-        // Still update the local state as a fallback
-        setUserCredits((prev) => prev - CREDITS_PER_IMAGE);
+        updateCredits(credits - CREDITS_PER_IMAGE);
       }
 
       setStatus("created");
@@ -459,7 +452,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       return;
     }
 
-    if (userCredits < CREDITS_PER_IMAGE) {
+    if (credits < CREDITS_PER_IMAGE) {
       toast({
         title: "Insufficient Credits",
         description: `You need ${CREDITS_PER_IMAGE} credits to generate an image. Please purchase more credits.`,
@@ -471,10 +464,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     setIsGenerating(true);
     setGeneratedImage(null);
     
-    console.log("Starting image generation process with prompt:", prompt);
-    
     try {
-      console.log("Sending API request for image generation");
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: {
@@ -487,43 +477,18 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         throw new Error(`API request failed with status ${response.status}`);
       }
 
-      console.log("Received API response, status:", response.status);
-      const responseText = await response.text();
-      console.log("Raw API response:", responseText.substring(0, 100) + "...");
+      const data = await response.json();
       
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log("Parsed API response data keys:", Object.keys(data));
-        console.log("Response contains imageUrl:", !!data.imageUrl);
-        console.log("Response contains success:", !!data.success);
-        console.log("Response contains imageId:", !!data.imageId);
-      } catch (jsonError) {
-        console.error("Failed to parse API response:", jsonError);
-        throw new Error("Invalid response format from server");
-      }
-
-      // 处理图像 URL
-      let imageUrl;
       if (data.imageUrl) {
-        console.log("Using direct imageUrl from response");
-        imageUrl = data.imageUrl;
-      } else if (data.success && data.imageId) {
-        console.log("Got imageId, attempting to use it:", data.imageId);
-        imageUrl = data.imageUrl; // 使用API返回的URL
-      }
-
-      if (imageUrl) {
-        console.log("Final imageUrl to be used:", imageUrl);
         const img = new window.Image();
         img.onload = async () => {
           try {
-            const newCredits = userCredits - CREDITS_PER_IMAGE;
+            const newCredits = credits - CREDITS_PER_IMAGE;
             
             setIsGenerating(false);
-            setGeneratedImage(imageUrl);
+            setGeneratedImage(data.imageUrl);
             setShowConfirmation(true);
-            setUserCredits(newCredits);
+            updateCredits(newCredits);
             
             if (user) {
               const { error } = await createClient()
@@ -574,12 +539,9 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
           }
         }, 30000);
         
-        img.src = imageUrl;
+        img.src = data.imageUrl;
         
         return () => clearTimeout(timeoutId);
-      } else {
-        setIsGenerating(false);
-        throw new Error("No valid image URL found in response");
       }
     } catch (error) {
       console.error("Error in image generation process:", error);
@@ -606,7 +568,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
   };
 
   // 渲染主页面
-  const hasEnoughCredits = userCredits >= CREDITS_PER_IMAGE;
+  const hasEnoughCredits = credits >= CREDITS_PER_IMAGE;
   const filteredMenu = parsedMenu.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -802,7 +764,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                           Your credits:
                         </span>
                         <span className="ml-2 font-bold text-lg text-primary-100">
-                          {userCredits}
+                          {credits}
                         </span>
                       </div>
                       <div className="flex items-center">
@@ -1166,7 +1128,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                           Your credits:
                         </span>
                         <span className="ml-2 font-bold text-lg text-primary-100">
-                          {userCredits}
+                          {credits}
                         </span>
                       </div>
                       <div className="flex items-center">
@@ -1500,7 +1462,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
               console.log("Regenerating item:", item.name, "at index:", index);
 
               // 确保用户有足够的积分
-              if (userCredits < 1) {
+              if (credits < 1) {
                 toast({
                   title: "Insufficient credits",
                   description:
@@ -1547,7 +1509,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                   setParsedMenu(updatedMenu);
 
                   // 更新用户积分
-                  setUserCredits((prev) => prev - 1);
+                  updateCredits(credits - 1);
 
                   toast({
                     title: "Image regenerated",

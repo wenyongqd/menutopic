@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { AnimationProvider } from "@/components/providers/animation-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import { CreditsProvider } from "@/components/providers/credits-provider";
 
 const PlausibleProvider = dynamic(() => import("next-plausible"), { ssr: false });
 
@@ -62,9 +63,11 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             <AnimationProvider>
-              <Header />
-              <main className="flex-grow bg-bg-100" style={{ zoom: 0.95 }}>{children}</main>
-              <Footer />
+              <CreditsProvider initialCredits={0}>
+                <Header />
+                <main className="flex-grow bg-bg-100" style={{ zoom: 0.95 }}>{children}</main>
+                <Footer />
+              </CreditsProvider>
             </AnimationProvider>
           </ToastProvider>
         </AuthProvider>

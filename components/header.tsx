@@ -114,15 +114,15 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
       setIsMobileMenuOpen(false);
     }
     
-    // 对于导航到受保护页面，先确保用户已认证
+    // 对于导航到受保护页面，使用 router.push
     if (path === '/dashboard' || path.startsWith('/images/') || path.startsWith('/credits/')) {
-      // 对于所有受保护的页面，使用 window.location 导航以确保完整的页面刷新
-      console.log('Header - Protected page detected, using full page refresh');
-      window.location.href = path;
+      // 使用 router.push 导航，让服务器端处理认证
+      console.log('Header - Protected page detected, using router.push');
+      router.push(path);
       return;
     }
     
-    // 导航到请求路径
+    // 导航到其他路径
     router.push(path);
     
     // 重置导航状态

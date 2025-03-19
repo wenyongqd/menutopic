@@ -1,56 +1,41 @@
 import { Suspense } from "react";
+import { getServerUserProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getServerUserProfile } from "@/app/actions";
 import { DashboardClient } from "./client";
-import { getRecentImages } from "@/lib/images";
+import { Card } from "@/components/ui/card";
 
 export default async function DashboardPage() {
-  // 获取用户信息
   const userProfile = await getServerUserProfile();
-  
-  // 如果用户未登录，重定向到登录页面
+
   if (!userProfile) {
-    console.log('Dashboard - No user profile, redirecting to login');
-    redirect('/login?redirect=/dashboard');
+    console.log("[DASHBOARD] User not found, redirecting to login");
+    redirect("/login");
   }
-  
-  console.log('Dashboard - User profile loaded:', userProfile.user.id);
-  
-  // 获取最近生成的图片
-  const recentImages = await getRecentImages(userProfile.user.id);
-  console.log('Dashboard - Recent images loaded:', recentImages.length);
-  
+
+  console.log("[DASHBOARD] User profile loaded:", userProfile.user.id);
+
   return (
     <Suspense fallback={<DashboardSkeleton />}>
-      <DashboardClient 
-        user={userProfile.user}
-        profile={userProfile.profile}
-        recentImages={recentImages}
-      />
+      <DashboardClient user={userProfile.user} />
     </Suspense>
   );
 }
 
-// 骨架屏组件
 function DashboardSkeleton() {
   return (
-    <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* 用户信息卡片骨架 */}
-        <div className="col-span-2">
-          <div className="h-40 bg-bg-200 rounded-lg animate-pulse"></div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col gap-8">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+          <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
         </div>
-        {/* 快速操作卡片骨架 */}
-        <div>
-          <div className="h-40 bg-bg-200 rounded-lg animate-pulse"></div>
-        </div>
-      </div>
-      
-      <div className="space-y-4">
-        <div className="h-10 w-1/3 bg-bg-200 rounded-lg animate-pulse"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 bg-bg-200 rounded-lg animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="p-4 h-64 animate-pulse">
+              <div className="w-full h-40 bg-gray-200 rounded mb-4" />
+              <div className="h-4 w-3/4 bg-gray-200 rounded mb-2" />
+              <div className="h-4 w-1/2 bg-gray-200 rounded" />
+            </Card>
           ))}
         </div>
       </div>

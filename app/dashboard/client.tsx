@@ -6,53 +6,73 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Button } from "@/components/ui/button";
 import { CreditCard, Image as ImageIcon, Plus, ArrowRight, Images } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCredits } from '@/components/providers/credits-provider';
-
-// 更新接口定义以匹配数据库结构
-interface ImageGeneration {
-  id: string;
-  created_at: string;
-  user_id: string;
-  prompt: string;
-  image_url: string;
-  credits_used: number;
-  status: string;
-  source: string;
-  menu_parsing_id?: string;
-}
-
-// 用户配置文件接口
-interface UserProfile {
-  id: string;
-  credits?: number;
-  credit_amount?: number;
-  // 其他可能的属性
-}
+import Image from "next/image";
+import { ImageGeneration as ImageGenerationType } from "@/lib/images";
 
 interface DashboardClientProps {
   user: User;
-  profile?: UserProfile;
-  recentImages: ImageGeneration[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function DashboardClient({ user, profile, recentImages }: DashboardClientProps) {
+export function DashboardClient({ user }: DashboardClientProps) {
   const { credits } = useCredits();
   const { user: clientUser, refreshData } = useAuth();
+  const [recentImages, setRecentImages] = useState<ImageGenerationType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     console.log('DashboardClient - Component mounted, refreshing auth state');
     console.log('DashboardClient - Server user:', user?.id);
     console.log('DashboardClient - Client user:', clientUser?.id || 'null');
-    console.log('DashboardClient - Recent images:', recentImages);
     
     if (!clientUser && user) {
       console.log('DashboardClient - Client state out of sync with server, refreshing');
       refreshData();
     }
-  }, [user, clientUser, refreshData, recentImages]);
+  }, [user, clientUser, refreshData]);
+
+  useEffect(() => {
+    async function fetchRecentImages() {
+      try {
+        const response = await fetch('/api/images/list?limit=6');
+        const data = await response.json();
+        
+        if (data.error) {
+          console.error('Error fetching recent images:', data.error);
+          return;
+        }
+
+        console.log('[DASHBOARD] Recent images loaded:', data.images.length);
+        setRecentImages(data.images);
+      } catch (error) {
+        console.error('Error fetching recent images:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchRecentImages();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="card overflow-hidden animate-pulse">
+              <div className="aspect-square bg-bg-200" />
+              <CardContent className="pt-4">
+                <div className="h-4 bg-bg-200 rounded w-3/4 mb-2" />
+                <div className="h-4 bg-bg-200 rounded w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
@@ -152,9 +172,10 @@ export function DashboardClient({ user, profile, recentImages }: DashboardClient
                 <Card className="card overflow-hidden hover:scale-[1.02] transition-transform">
                   <div className="aspect-square relative bg-bg-200 overflow-hidden">
                     {image.image_url ? (
-                      <img
+                      <Image
                         src={image.image_url}
                         alt={image.prompt}
+                        fill
                         className="object-cover w-full h-full transition-transform hover:scale-105"
                         onError={(e) => {
                           console.error('Error loading image:', image.image_url);
@@ -244,9 +265,10 @@ export function DashboardClient({ user, profile, recentImages }: DashboardClient
                   >
                     <Card className="card overflow-hidden opacity-90 hover:opacity-100 hover:shadow-md transition-all">
                       <div className="aspect-square relative bg-bg-200 overflow-hidden">
-                        <img
+                        <Image
                           src={sample.imageUrl}
                           alt={sample.prompt}
+                          fill
                           className="object-cover w-full h-full transition-transform hover:scale-105"
                         />
                         <div className="absolute top-2 right-2 bg-bg-100/80 backdrop-blur-sm text-xs px-2 py-1 rounded-full text-text-200">

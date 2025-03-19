@@ -83,7 +83,7 @@ export async function GET(req: Request) {
       // 更新用户信用点
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('*')
+        .select('credits')
         .eq('id', userId)
         .single()
       
@@ -98,17 +98,20 @@ export async function GET(req: Request) {
         }
       } else {
         // 更新现有配置文件
-        if ('credit_amount' in profile) {
-          await supabase
-            .from('user_profiles')
-            .update({ credit_amount: (profile.credit_amount || 0) + credits })
-            .eq('id', userId)
-        } else {
-          await supabase
-            .from('user_profiles')
-            .update({ credits: (profile.credits || 0) + credits })
-            .eq('id', userId)
-        }
+        const currentCredits = profile.credits || 0
+        const newCredits = currentCredits + credits
+        
+        console.log('Credits update:', {
+          userId,
+          currentCredits,
+          purchasedCredits: credits,
+          newTotal: newCredits
+        })
+        
+        await supabase
+          .from('user_profiles')
+          .update({ credits: newCredits })
+          .eq('id', userId)
       }
       
       // 记录交易

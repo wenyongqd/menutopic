@@ -70,6 +70,28 @@ function SuccessPageContent() {
               console.error('Error restoring session:', authError)
               // 继续处理，因为支付已经完成
             }
+          } else {
+            // 即使有用户会话，也刷新一次数据以确保状态同步
+            refreshData()
+          }
+          
+          // 获取最新的用户配置文件数据
+          try {
+            const supabase = createClient()
+            const { data: profile } = await supabase
+              .from('user_profiles')
+              .select('credits')
+              .eq('id', user?.id)
+              .single()
+              
+            console.log('Current user credits:', {
+              userId: user?.id,
+              sessionId,
+              purchasedCredits: data.credits,
+              profileCredits: profile?.credits
+            })
+          } catch (error) {
+            console.error('Error fetching updated profile:', error)
           }
         } else {
           throw new Error(data.error || 'Verification failed')

@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase";
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 export interface ImageGeneration {

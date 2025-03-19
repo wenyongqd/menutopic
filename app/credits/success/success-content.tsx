@@ -4,9 +4,10 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle, ArrowRight, CreditCard } from 'lucide-react'
+import { CheckCircle, ArrowRight, CreditCard, Sparkles } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useCredits } from '@/components/providers/credits-provider'
+import { motion } from 'framer-motion'
 
 interface PaymentData {
   success: boolean
@@ -27,18 +28,20 @@ export function SuccessContent({ paymentData, isMock }: SuccessContentProps) {
   const { updateCredits } = useCredits()
   
   useEffect(() => {
-    // 更新 credits context
     if (paymentData.success) {
       updateCredits(paymentData.currentCredits)
       refreshData()
     }
   }, [paymentData, updateCredits, refreshData])
   
-  // 如果验证失败，显示错误状态
   if (!paymentData.success) {
     return (
       <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
-        <div className="flex flex-col items-center justify-center space-y-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center justify-center space-y-4"
+        >
           <div className="h-20 w-20 rounded-full bg-red-100 flex items-center justify-center">
             <CheckCircle className="h-12 w-12 text-red-500" />
           </div>
@@ -54,71 +57,148 @@ export function SuccessContent({ paymentData, isMock }: SuccessContentProps) {
           >
             Return to Dashboard
           </Button>
-        </div>
+        </motion.div>
       </div>
     )
   }
   
-  // 如果验证成功，显示成功状态
   return (
     <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
-      <div className="flex flex-col items-center justify-center space-y-4 fade-in">
-        <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center">
-          <CheckCircle className="h-12 w-12 text-green-500" />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-col items-center justify-center space-y-4"
+      >
+        <div className="relative">
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ 
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+              delay: 0.2 
+            }}
+            className="h-24 w-24 rounded-full bg-green-100 flex items-center justify-center"
+          >
+            <CheckCircle className="h-14 w-14 text-green-500" />
+          </motion.div>
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+            className="absolute -top-2 -right-2"
+          >
+            <Sparkles className="h-6 w-6 text-yellow-400" />
+          </motion.div>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-text-100 text-center">
+        
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-4xl md:text-5xl font-bold text-text-100 text-center bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-emerald-500"
+        >
           Payment Successful!
-        </h1>
-        <p className="text-text-200 text-lg text-center max-w-lg">
+        </motion.h1>
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="text-text-200 text-lg text-center max-w-lg"
+        >
           Thank you for your purchase. Your credits have been added to your account.
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
       
-      <div style={{ animationDelay: "0.1s" }}>
-        <Card className="max-w-md mx-auto fade-in">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <Card className="max-w-md mx-auto border-2 border-green-100 shadow-lg shadow-green-50">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <CreditCard className="mr-2 h-5 w-5 text-primary-100" />
+            <CardTitle className="flex items-center text-2xl">
+              <CreditCard className="mr-2 h-6 w-6 text-green-500" />
               Purchase Summary
             </CardTitle>
             <CardDescription>Details of your transaction</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between">
-              <span className="text-text-200">Credits Added:</span>
-              <span className="font-bold">{paymentData.purchasedCredits}</span>
-            </div>
-            <div className="flex justify-between">
+          <CardContent className="space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex justify-between items-center bg-green-50 p-4 rounded-lg"
+            >
+              <span className="text-text-200 text-lg">Credits Added:</span>
+              <motion.span 
+                initial={{ scale: 0.5 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.7, type: "spring" }}
+                className="font-bold text-2xl text-green-600"
+              >
+                +{paymentData.purchasedCredits}
+              </motion.span>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.7 }}
+              className="flex justify-between items-center"
+            >
               <span className="text-text-200">Current Credits:</span>
-              <span className="font-bold">{paymentData.currentCredits}</span>
-            </div>
-            <div className="flex justify-between">
+              <span className="font-bold text-xl">{paymentData.currentCredits}</span>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 }}
+              className="flex justify-between items-center"
+            >
               <span className="text-text-200">Transaction ID:</span>
-              <span className="font-mono text-sm">{paymentData.sessionId.substring(0, 16)}...</span>
-            </div>
+              <span className="font-mono text-sm bg-gray-100 px-3 py-1 rounded-full">
+                {paymentData.sessionId.substring(0, 16)}...
+              </span>
+            </motion.div>
             {isMock && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9 }}
+                className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800"
+              >
                 This is a mock transaction for testing purposes. No actual payment was processed.
-              </div>
+              </motion.div>
             )}
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
       
-      <div className="flex justify-center fade-in" style={{ animationDelay: "0.2s" }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1 }}
+        className="flex justify-center"
+      >
         <Button 
-          className="btn-primary px-8 py-6 text-lg"
+          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-8 py-6 text-lg rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
           onClick={() => {
-            // 设置标记
             sessionStorage.setItem('from_payment', 'true');
-            // 使用 window.location.href 导航，确保页面完全刷新
             window.location.href = '/dashboard';
           }}
         >
           Go to Dashboard
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
-      </div>
+      </motion.div>
     </div>
   )
 } 

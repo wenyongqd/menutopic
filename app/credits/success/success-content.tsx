@@ -27,12 +27,14 @@ export function SuccessContent({ paymentData, isMock }: SuccessContentProps) {
   const { refreshData } = useAuth()
   const { updateCredits } = useCredits()
   
+  const totalCredits = paymentData.currentCredits + paymentData.purchasedCredits
+  
   useEffect(() => {
     if (paymentData.success) {
-      updateCredits(paymentData.currentCredits)
+      updateCredits(totalCredits)
       refreshData()
     }
-  }, [paymentData, updateCredits, refreshData])
+  }, [paymentData, updateCredits, refreshData, totalCredits])
   
   if (!paymentData.success) {
     return (
@@ -152,10 +154,31 @@ export function SuccessContent({ paymentData, isMock }: SuccessContentProps) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.7 }}
-              className="flex justify-between items-center"
+              className="flex flex-col space-y-2"
             >
-              <span className="text-text-200">Current Credits:</span>
-              <span className="font-bold text-xl">{paymentData.currentCredits}</span>
+              <div className="flex justify-between items-center text-text-200">
+                <span>Previous Credits:</span>
+                <span>{paymentData.currentCredits}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-200">Total Credits:</span>
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.8, type: "spring" }}
+                  className="flex items-center space-x-1"
+                >
+                  <span className="font-bold text-xl text-green-600">{totalCredits}</span>
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="text-xs text-green-500"
+                  >
+                    (Updated)
+                  </motion.span>
+                </motion.div>
+              </div>
             </motion.div>
             <motion.div 
               initial={{ opacity: 0, x: -20 }}

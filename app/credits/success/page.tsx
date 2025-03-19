@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/toast'
 import { CheckCircle, ArrowRight, CreditCard } from 'lucide-react'
 import { useAuth } from '@/components/providers/auth-provider'
+import { useCredits } from '@/components/providers/credits-provider'
 import { createClient } from '@/lib/supabase'
 
 // 创建一个内部组件来使用 useSearchParams
@@ -19,6 +20,7 @@ function SuccessPageContent() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
   const { refreshData, user } = useAuth()
+  const { updateCredits } = useCredits()
   
   const sessionId = searchParams.get('session_id')
   const isMock = searchParams.get('mock') === 'true'
@@ -35,6 +37,7 @@ function SuccessPageContent() {
         if (isMock) {
           const mockCredits = parseInt(searchParams.get('credits') || '0')
           setCredits(mockCredits)
+          updateCredits(mockCredits)
           setIsVerified(true)
           setIsLoading(false)
           return
@@ -58,7 +61,34 @@ function SuccessPageContent() {
         console.log('Verification response:', data)
         
         if (data.success) {
-          setCredits(data.credits || 0)
+          // 获取最新的用户配置文件数据
+          try {
+            const supabase = createClient()
+            const { data: profile } = await supabase
+              .from('user_profiles')
+              .select('credits')
+              .eq('id', user?.id)
+              .single()
+              
+            console.log('Current user credits:', {
+              userId: user?.id,
+              sessionId,
+              purchasedCredits: data.credits,
+              profileCredits: profile?.credits
+            })
+            
+            // 使用数据库中的最新credits更新状态
+            if (profile?.credits !== undefined) {
+              setCredits(profile.credits)
+              updateCredits(profile.credits)
+            }
+          } catch (error) {
+            console.error('Error fetching updated profile:', error)
+            // 如果获取配置文件失败，使用响应中的credits
+            setCredits(data.credits || 0)
+            updateCredits(data.credits || 0)
+          }
+          
           setIsVerified(true)
           
           // 如果当前没有用户会话，尝试恢复
@@ -76,25 +106,6 @@ function SuccessPageContent() {
             // 即使有用户会话，也刷新一次数据以确保状态同步
             refreshData()
           }
-          
-          // 获取最新的用户配置文件数据
-          try {
-            const supabase = createClient()
-            const { data: profile } = await supabase
-              .from('user_profiles')
-              .select('credits')
-              .eq('id', user?.id)
-              .single()
-              
-            console.log('Current user credits:', {
-              userId: user?.id,
-              sessionId,
-              purchasedCredits: data.credits,
-              profileCredits: profile?.credits
-            })
-          } catch (error) {
-            console.error('Error fetching updated profile:', error)
-          }
         } else {
           throw new Error(data.error || 'Verification failed')
         }
@@ -111,7 +122,7 @@ function SuccessPageContent() {
     }
     
     verifyPayment()
-  }, [sessionId, router, toast, isMock, searchParams, retryCount, refreshData, user])
+  }, [sessionId, router, toast, isMock, searchParams, retryCount, refreshData, user, updateCredits])
   
   // 如果正在加载且尚未验证，显示加载状态
   if (isLoading && !isVerified) {

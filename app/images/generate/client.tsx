@@ -211,6 +211,10 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
         setStatus("created"); // 确保在数据设置后更新状态
         setIsUploading(false); // 重置上传状态
 
+        // 立即更新本地积分显示
+        const newCredits = credits - CREDITS_PER_IMAGE;
+        updateCredits(newCredits);
+
         // Fetch updated credits from the database
         try {
           if (user) {
@@ -227,15 +231,14 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                 updatedProfile?.credits !== undefined
                   ? updatedProfile.credits
                   : updatedProfile?.credit_amount || 0;
-              updateCredits(updatedCredits);
+              // 只有当数据库中的积分与本地计算的不一致时才更新
+              if (updatedCredits !== newCredits) {
+                updateCredits(updatedCredits);
+              }
             }
-          } else {
-            console.error("User not found when trying to fetch updated credits");
-            updateCredits(credits - CREDITS_PER_IMAGE);
           }
         } catch (creditFetchError) {
           console.error("Error fetching updated credits:", creditFetchError);
-          updateCredits(credits - CREDITS_PER_IMAGE);
         }
 
         // 清除已选择的文件
@@ -325,6 +328,10 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       const json = await res.json();
       console.log("parseMenu API response:", json);
 
+      // 立即更新本地积分显示
+      const newCredits = credits - CREDITS_PER_IMAGE;
+      updateCredits(newCredits);
+
       // Fetch updated credits from the database
       try {
         if (user) {
@@ -341,15 +348,14 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
               updatedProfile?.credits !== undefined
                 ? updatedProfile.credits
                 : updatedProfile?.credit_amount || 0;
-            updateCredits(updatedCredits);
+            // 只有当数据库中的积分与本地计算的不一致时才更新
+            if (updatedCredits !== newCredits) {
+              updateCredits(updatedCredits);
+            }
           }
-        } else {
-          console.error("User not found when trying to fetch updated credits");
-          updateCredits(credits - CREDITS_PER_IMAGE);
         }
       } catch (creditFetchError) {
         console.error("Error fetching updated credits:", creditFetchError);
-        updateCredits(credits - CREDITS_PER_IMAGE);
       }
 
       setStatus("created");

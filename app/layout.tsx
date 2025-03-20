@@ -1,5 +1,6 @@
 import { Header } from "@/components/server-header";
 import { Footer } from "@/components/footer";
+import { HelpButton } from "@/components/help-button";
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -66,6 +67,7 @@ export default function RootLayout({
               <CreditsProvider initialCredits={0}>
                 <Header />
                 <main className="flex-grow bg-bg-100" style={{ zoom: 0.95 }}>{children}</main>
+                <HelpButton />
                 <Footer />
               </CreditsProvider>
             </AnimationProvider>

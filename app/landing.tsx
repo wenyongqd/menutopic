@@ -51,48 +51,48 @@ export default function LandingPage() {
     <div className="bg-gradient-to-b from-bg-100 to-white">
       <main>
         {/* Hero Section */}
-        <section className="w-full py-20 md:py-28 lg:py-36 xl:py-40 overflow-hidden relative">
+        <section className="w-full py-12 sm:py-16 md:py-20 lg:py-28 xl:py-36 overflow-hidden relative">
           {/* Background decorative elements */}
           <div className="absolute inset-0 overflow-hidden">
-            <div className={`absolute -top-24 -right-24 w-96 h-96 rounded-full bg-primary-100/15 blur-3xl transition-all duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
-            <div className={`absolute top-1/2 -left-24 w-72 h-72 rounded-full bg-accent-200/25 blur-3xl transition-all duration-1000 delay-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
-            <div className={`absolute bottom-0 right-1/4 w-64 h-64 rounded-full bg-primary-300/10 blur-3xl transition-all duration-1000 delay-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
+            <div className={`absolute -top-24 -right-24 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-primary-100/15 blur-3xl transition-all duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
+            <div className={`absolute top-1/2 -left-24 w-48 sm:w-72 h-48 sm:h-72 rounded-full bg-accent-200/25 blur-3xl transition-all duration-1000 delay-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
+            <div className={`absolute bottom-0 right-1/4 w-40 sm:w-64 h-40 sm:h-64 rounded-full bg-primary-300/10 blur-3xl transition-all duration-1000 delay-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}></div>
           </div>
           
           <div className="container mx-auto px-4 md:px-6 max-w-7xl relative z-10">
-            <div className="grid gap-12 lg:grid-cols-[1fr_550px] lg:gap-16 xl:grid-cols-[1fr_650px] items-center">
-              <div className="flex flex-col justify-center space-y-8">
-                <div className={`inline-flex items-center px-4 py-1.5 rounded-full bg-primary-100/10 text-primary-100 text-sm font-medium mb-2 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className="grid gap-8 md:gap-12 lg:grid-cols-[1fr_550px] lg:gap-16 xl:grid-cols-[1fr_650px] items-center">
+              <div className="flex flex-col justify-center space-y-6 md:space-y-8 text-center lg:text-left">
+                <div className={`inline-flex items-center px-4 py-1.5 rounded-full bg-primary-100/10 text-primary-100 text-sm font-medium mb-2 mx-auto lg:mx-0 transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                   <span className="flex h-2 w-2 rounded-full bg-primary-100 mr-2 animate-pulse"></span>
                   AI-Powered Menu Visualization
                 </div>
-                <div className="space-y-6">
-                  <h1 className={`text-5xl font-bold tracking-tight text-text-100 sm:text-6xl xl:text-7xl transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                <div className="space-y-4 md:space-y-6">
+                  <h1 className={`text-4xl sm:text-5xl font-bold tracking-tight text-text-100 lg:text-6xl xl:text-7xl transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                     <span className="block">Visualize Your Menu</span>
                     <span className="block text-primary-100 mt-2">With Stunning AI Images</span>
                   </h1>
-                  <p className={`max-w-[600px] text-text-200 md:text-xl leading-relaxed transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                  <p className={`mx-auto lg:mx-0 max-w-[600px] text-text-200 text-base md:text-lg lg:text-xl leading-relaxed transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                     Take a picture of any menu and instantly get beautiful AI-generated images of each dish to help you decide what to order.
                   </p>
                 </div>
-                <div className={`flex flex-col sm:flex-row gap-5 mt-4 transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                <div className={`flex flex-col sm:flex-row gap-4 sm:gap-5 mt-4 transition-all duration-700 delay-300 mx-auto lg:mx-0 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                   <Link 
                     href="/dashboard" 
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-100 px-8 py-4 text-base font-medium text-white hover:bg-primary-200 transition-all shadow-lg hover:shadow-xl hover:shadow-primary-100/20 hover:translate-y-[-2px]"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-100 px-6 sm:px-8 py-3 sm:py-4 text-base font-medium text-white hover:bg-primary-200 transition-all shadow-lg hover:shadow-xl hover:shadow-primary-100/20 hover:translate-y-[-2px]"
                   >
                     Get Started <ArrowRight className="h-4 w-4 ml-1" />
                   </Link>
                   <Link 
                     href="#how-it-works" 
-                    className="inline-flex items-center justify-center rounded-full border-2 border-bg-300 bg-transparent px-8 py-4 text-base font-medium text-text-100 hover:bg-bg-200 transition-all hover:border-primary-100/50"
+                    className="inline-flex items-center justify-center rounded-full border-2 border-bg-300 bg-transparent px-6 sm:px-8 py-3 sm:py-4 text-base font-medium text-text-100 hover:bg-bg-200 transition-all hover:border-primary-100/50"
                   >
                     Learn More <ChevronRight className="h-4 w-4 ml-1" />
                   </Link>
                 </div>
-                <div className={`flex items-center gap-3 mt-6 text-sm text-text-200 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                  <div className="flex -space-x-3">
+                <div className={`flex items-center gap-3 mt-4 sm:mt-6 text-sm text-text-200 transition-all duration-700 delay-400 mx-auto lg:mx-0 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                  <div className="flex -space-x-2 sm:-space-x-3">
                     {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="w-9 h-9 rounded-full border-2 border-white bg-bg-200 flex items-center justify-center text-xs font-medium shadow-sm">
+                      <div key={i} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white bg-bg-200 flex items-center justify-center text-xs font-medium shadow-sm">
                         {i}
                       </div>
                     ))}
@@ -100,7 +100,7 @@ export default function LandingPage() {
                   <span>Join <span className="font-medium text-primary-100">1,000+</span> users visualizing menus</span>
                 </div>
               </div>
-              <div className={`relative mx-auto lg:order-last transition-all duration-1000 delay-300 ${isLoaded ? 'opacity-100 translate-y-0 translate-x-0' : 'opacity-0 translate-y-8 translate-x-8'}`}>
+              <div className={`relative mx-auto lg:order-last transition-all duration-1000 delay-300 max-w-md sm:max-w-lg md:max-w-xl lg:max-w-none ${isLoaded ? 'opacity-100 translate-y-0 translate-x-0' : 'opacity-0 translate-y-8 translate-x-8'}`}>
                 <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-primary-100/20 to-accent-200/20 rounded-2xl blur-xl transform rotate-3"></div>
                 <div className="relative overflow-hidden rounded-2xl shadow-2xl border border-bg-300/50 group">
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary-100/10 to-accent-200/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
@@ -115,20 +115,20 @@ export default function LandingPage() {
                     }}
                   />
                 </div>
-                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-primary-100/10 rounded-full blur-xl"></div>
+                <div className="absolute -bottom-6 -right-6 w-16 sm:w-24 h-16 sm:h-24 bg-primary-100/10 rounded-full blur-xl"></div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section id="features" className="w-full py-20 md:py-28 lg:py-32 relative overflow-hidden">
+        <section id="features" className="w-full py-12 sm:py-16 md:py-20 lg:py-28 relative overflow-hidden">
           {/* Background decorative elements */}
           <div className="absolute inset-0 bg-gradient-to-b from-bg-100/50 via-bg-200/30 to-white"></div>
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white to-transparent"></div>
           <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-white to-transparent"></div>
-          <div className="absolute left-0 top-1/4 w-64 h-64 rounded-full bg-primary-100/5 blur-3xl"></div>
-          <div className="absolute right-0 bottom-1/4 w-64 h-64 rounded-full bg-accent-200/10 blur-3xl"></div>
+          <div className="absolute left-0 top-1/4 w-40 sm:w-64 h-40 sm:h-64 rounded-full bg-primary-100/5 blur-3xl"></div>
+          <div className="absolute right-0 bottom-1/4 w-40 sm:w-64 h-40 sm:h-64 rounded-full bg-accent-200/10 blur-3xl"></div>
           
           <div className="container mx-auto px-4 md:px-6 max-w-7xl relative z-10">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
@@ -136,10 +136,10 @@ export default function LandingPage() {
                 <span className="flex h-2 w-2 rounded-full bg-primary-100 mr-2"></span>
                 Menu Visualization
               </div>
-              <h2 className="text-4xl font-bold tracking-tight text-text-100 md:text-5xl lg:text-6xl max-w-3xl">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-text-100 max-w-3xl">
                 Transform Your Menu Into <span className="text-primary-100">Visual Delights</span>
               </h2>
-              <p className="mx-auto max-w-[700px] text-text-200 md:text-xl mt-6">
+              <p className="mx-auto max-w-[700px] text-text-200 text-base md:text-lg lg:text-xl mt-4 sm:mt-6">
                 See how our AI transforms menu items into beautiful, appetizing visuals that help you make informed dining decisions.
               </p>
             </div>
@@ -194,10 +194,10 @@ export default function LandingPage() {
                   }
                 ].map((item, index) => (
                   <div key={index} className="relative flex flex-col items-center group">
-                    <div className="relative z-20 flex h-20 w-20 items-center justify-center rounded-full bg-primary-100 text-2xl font-bold text-white shadow-lg mb-10 group-hover:scale-110 transition-transform duration-300">
+                    <div className="relative z-20 flex h-14 w-14 md:h-20 md:w-20 items-center justify-center rounded-full bg-primary-100 text-lg md:text-2xl font-bold text-white shadow-lg mb-6 md:mb-10 group-hover:scale-110 transition-transform duration-300">
                       {item.step}
-                      <div className="absolute -inset-4 rounded-full border-2 border-dashed border-primary-100/30 animate-[spin_30s_linear_infinite]"></div>
-                      <div className="absolute -inset-6 rounded-full border border-primary-100/20 group-hover:border-primary-100/40 transition-colors duration-300"></div>
+                      <div className="absolute -inset-3 md:-inset-4 rounded-full border-2 border-dashed border-primary-100/30 animate-[spin_30s_linear_infinite]"></div>
+                      <div className="absolute -inset-4 md:-inset-6 rounded-full border border-primary-100/20 group-hover:border-primary-100/40 transition-colors duration-300"></div>
                     </div>
                     
                     <div className="bg-white rounded-2xl p-8 shadow-lg border border-bg-300/20 w-full h-full flex flex-col group-hover:shadow-xl group-hover:border-primary-100/30 transition-all duration-300 group-hover:translate-y-[-5px]">

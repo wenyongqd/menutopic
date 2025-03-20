@@ -154,10 +154,10 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
             }}
           >
             <div className="relative overflow-hidden rounded-lg p-1">
-              <MdRestaurantMenu className="h-8 w-8 text-primary-100 transition-transform group-hover:scale-110" />
+              <MdRestaurantMenu className="h-7 w-7 sm:h-8 sm:w-8 text-primary-100 transition-transform group-hover:scale-110" />
               <span className="absolute inset-0 rounded-lg bg-primary-100/10 scale-0 transition-transform group-hover:scale-100"></span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary-100 to-primary-300 bg-clip-text text-transparent">
+            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary-100 to-primary-300 bg-clip-text text-transparent">
               MenuToPic
             </span>
           </Link>
@@ -168,7 +168,8 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
               variant="ghost" 
               size="sm" 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-text-200 hover:text-primary-100"
+              className="text-text-200 hover:text-primary-100 p-1"
+              aria-label="Toggle mobile menu"
             >
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -285,20 +286,20 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
         
         {/* Mobile menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden mt-4 py-4 border-t border-bg-300 animate-fadeIn">
+          <div className="md:hidden mt-3 py-4 border-t border-bg-300 animate-fadeIn bg-bg-100/95 backdrop-blur-sm rounded-lg shadow-lg">
             {isLandingPage ? (
-              <div className="flex flex-col space-y-4">
+              <div className="flex flex-col space-y-3">
                 {["Features", "Testimonials", "How It Works", "FAQ"].map((item) => (
                   <Link 
                     key={item}
                     href={`#${item.toLowerCase().replace(/\s+/g, '-')}`} 
-                    className="text-sm font-medium text-text-200 hover:text-primary-100 py-2"
+                    className="text-sm font-medium text-text-200 hover:text-primary-100 py-2 px-4 rounded-md hover:bg-bg-200/70"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {item}
                   </Link>
                 ))}
-                <div className="pt-2 flex flex-col space-y-2">
+                <div className="pt-2 flex flex-col space-y-3 px-4">
                   <Link 
                     href="/" 
                     className="w-full inline-flex items-center justify-center rounded-lg bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors"
@@ -309,18 +310,18 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col space-y-3">
+              <div className="flex flex-col space-y-2">
                 {user || (isDashboard || isGeneratePage || isCreditsPage) ? (
                   <>
-                    <div className="py-2">
+                    <div className="py-2 px-4">
                       <UserCredits initialCredits={serverCredits} />
                     </div>
                     <Button 
-                      className={`flex items-center space-x-2 py-2 justify-start ${
+                      className={`flex items-center space-x-2 py-2 justify-start px-4 ${
                         isDashboard 
-                          ? "text-primary-100" 
-                          : "text-text-200 hover:text-primary-100"
-                      }`}
+                          ? "text-primary-100 bg-primary-100/10" 
+                          : "text-text-200 hover:text-primary-100 hover:bg-bg-200/70"
+                      } rounded-md`}
                       variant="ghost"
                       onClick={() => handleNavigation('/dashboard')}
                       disabled={isNavigating}
@@ -329,11 +330,11 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                       <span>Dashboard</span>
                     </Button>
                     <Button 
-                      className={`flex items-center space-x-2 py-2 justify-start ${
+                      className={`flex items-center space-x-2 py-2 justify-start px-4 ${
                         isGeneratePage 
-                          ? "text-primary-100" 
-                          : "text-text-200 hover:text-primary-100"
-                      }`}
+                          ? "text-primary-100 bg-primary-100/10" 
+                          : "text-text-200 hover:text-primary-100 hover:bg-bg-200/70"
+                      } rounded-md`}
                       variant="ghost"
                       onClick={() => handleNavigation('/images/generate')}
                       disabled={isNavigating}
@@ -342,11 +343,11 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                       <span>Generate Images</span>
                     </Button>
                     <Button 
-                      className={`flex items-center space-x-2 py-2 justify-start ${
+                      className={`flex items-center space-x-2 py-2 justify-start px-4 ${
                         isCreditsPage 
-                          ? "text-primary-100" 
-                          : "text-text-200 hover:text-primary-100"
-                      }`}
+                          ? "text-primary-100 bg-primary-100/10" 
+                          : "text-text-200 hover:text-primary-100 hover:bg-bg-200/70"
+                      } rounded-md`}
                       variant="ghost"
                       onClick={() => handleNavigation('/credits/purchase')}
                       disabled={isNavigating || isCreditsPage}
@@ -354,10 +355,10 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                       <CreditCard className={`h-5 w-5 ${isCreditsPage ? "text-primary-100" : ""}`} />
                       <span>Buy Credits</span>
                     </Button>
-                    <div className="py-2">
+                    <div className="py-2 px-4">
                       <LogoutButton 
                         variant="ghost"
-                        className="text-text-200 hover:text-primary-100 w-full justify-start"
+                        className="text-text-200 hover:text-primary-100 hover:bg-bg-200/70 w-full justify-start rounded-md"
                         onClick={() => setIsMobileMenuOpen(false)}
                       />
                     </div>
@@ -366,7 +367,7 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                   <>
                     <Button
                       variant="ghost"
-                      className="flex items-center justify-start space-x-2 text-text-200 hover:text-primary-100 py-2"
+                      className="flex items-center justify-start space-x-2 text-text-200 hover:text-primary-100 py-2 px-4 hover:bg-bg-200/70 rounded-md"
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         refreshData();
@@ -377,26 +378,18 @@ export function ClientHeader({ initialCredits }: ClientHeaderProps) {
                       <User className="h-5 w-5" />
                       <span>Sign In</span>
                     </Button>
-                    <Button
-                      className="w-full inline-flex items-center justify-center rounded-lg bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        handleNavigation('/register');
-                      }}
-                      disabled={isNavigating}
-                    >
-                      Sign Up
-                    </Button>
-                    {/* <a
-                      className="flex items-center justify-center space-x-2 rounded-full border border-bg-300 bg-bg-100 px-4 py-2 text-sm text-text-200 hover:bg-bg-200"
-                      href="https://github.com/Nutlope/MenuToPic"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <FaGithub className="h-5 w-5" />
-                      <p>Star on GitHub</p>
-                    </a> */}
+                    <div className="px-4 py-2">
+                      <Button
+                        className="w-full inline-flex items-center justify-center rounded-lg bg-primary-100 text-white hover:bg-primary-200 h-10 py-2 px-4 text-sm font-medium transition-colors"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          handleNavigation('/register');
+                        }}
+                        disabled={isNavigating}
+                      >
+                        Sign Up
+                      </Button>
+                    </div>
                   </>
                 )}
               </div>

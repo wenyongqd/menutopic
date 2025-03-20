@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
@@ -44,31 +44,48 @@ const duplicatedImages = [...menuImages, ...menuImages, ...menuImages];
 
 export function MenuImageGallery() {
   const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect if we're on mobile for better performance
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Check on initial load
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
-    <div className="w-full overflow-hidden py-12">
+    <div className="w-full overflow-hidden py-8 sm:py-12">
       {/* Top row - scrolling left */}
-      <div className="relative w-full overflow-hidden mb-8 h-[300px]">
+      <div className="relative w-full overflow-hidden mb-4 sm:mb-8 h-[180px] sm:h-[240px] md:h-[300px]">
         <motion.div
-          className="flex gap-6 absolute left-0 top-0 h-full"
+          className="flex gap-3 sm:gap-6 absolute left-0 top-0 h-full"
           animate={{
-            x: isHovered ? 0 : [0, -1920],
+            x: isHovered || isMobile ? 0 : [0, -1920],
           }}
           transition={{
             x: {
               repeat: Infinity,
               repeatType: "loop",
-              duration: 30,
+              duration: isMobile ? 45 : 30,
               ease: "linear",
             },
           }}
-          onHoverStart={() => setIsHovered(true)}
-          onHoverEnd={() => setIsHovered(false)}
+          onHoverStart={() => !isMobile && setIsHovered(true)}
+          onHoverEnd={() => !isMobile && setIsHovered(false)}
         >
           {duplicatedImages.map((image, index) => (
             <div
               key={`${image.name}-${index}`}
-              className="relative flex-none w-[280px] h-full group"
+              className="relative flex-none w-[200px] sm:w-[240px] md:w-[280px] h-full group"
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl z-10" />
               <Image
@@ -81,9 +98,9 @@ export function MenuImageGallery() {
                   e.currentTarget.src = `https://placehold.co/280x300/e2e8f0/64748b?text=${encodeURIComponent(image.name)}`;
                 }}
               />
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                <h4 className="font-bold text-lg mb-1">{image.name}</h4>
-                <p className="text-sm text-white/90">{image.description}</p>
+              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 text-white opacity-0 group-hover:opacity-100 md:group-hover:opacity-100 transition-opacity duration-300 z-20">
+                <h4 className="font-bold text-base sm:text-lg mb-0 sm:mb-1">{image.name}</h4>
+                <p className="text-xs sm:text-sm text-white/90 line-clamp-2">{image.description}</p>
               </div>
             </div>
           ))}
@@ -91,27 +108,27 @@ export function MenuImageGallery() {
       </div>
 
       {/* Bottom row - scrolling right */}
-      <div className="relative w-full overflow-hidden h-[300px]">
+      <div className="relative w-full overflow-hidden h-[180px] sm:h-[240px] md:h-[300px]">
         <motion.div
-          className="flex gap-6 absolute left-0 top-0 h-full"
+          className="flex gap-3 sm:gap-6 absolute left-0 top-0 h-full"
           animate={{
-            x: isHovered ? 0 : [-1920, 0],
+            x: isHovered || isMobile ? 0 : [-1920, 0],
           }}
           transition={{
             x: {
               repeat: Infinity,
               repeatType: "loop",
-              duration: 30,
+              duration: isMobile ? 45 : 30,
               ease: "linear",
             },
           }}
-          onHoverStart={() => setIsHovered(true)}
-          onHoverEnd={() => setIsHovered(false)}
+          onHoverStart={() => !isMobile && setIsHovered(true)}
+          onHoverEnd={() => !isMobile && setIsHovered(false)}
         >
           {duplicatedImages.reverse().map((image, index) => (
             <div
               key={`${image.name}-${index}`}
-              className="relative flex-none w-[280px] h-full group"
+              className="relative flex-none w-[200px] sm:w-[240px] md:w-[280px] h-full group"
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl z-10" />
               <Image
@@ -124,9 +141,9 @@ export function MenuImageGallery() {
                   e.currentTarget.src = `https://placehold.co/280x300/e2e8f0/64748b?text=${encodeURIComponent(image.name)}`;
                 }}
               />
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                <h4 className="font-bold text-lg mb-1">{image.name}</h4>
-                <p className="text-sm text-white/90">{image.description}</p>
+              <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 text-white opacity-0 group-hover:opacity-100 md:group-hover:opacity-100 transition-opacity duration-300 z-20">
+                <h4 className="font-bold text-base sm:text-lg mb-0 sm:mb-1">{image.name}</h4>
+                <p className="text-xs sm:text-sm text-white/90 line-clamp-2">{image.description}</p>
               </div>
             </div>
           ))}

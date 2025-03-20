@@ -60,13 +60,13 @@ export function Footer() {
             </a>
           </div>
         </div> */}
-        <div className="mt-6 text-center text-sm text-text-200">
-          <div className="flex justify-center space-x-4">
-            <Link href="#features" className="hover:text-primary-100">Features</Link>
-            <Link href="#how-it-works" className="hover:text-primary-100">How It Works</Link>
-            <Link href="#faq" className="hover:text-primary-100">FAQ</Link>
+        <div className="mt-4 text-center text-sm text-text-200">
+          <div className="flex flex-wrap justify-center gap-3 md:gap-6 mb-4">
+            <Link href="#features" className="text-text-200 hover:text-primary-100 hover:underline underline-offset-4 px-2">Features</Link>
+            <Link href="#how-it-works" className="text-text-200 hover:text-primary-100 hover:underline underline-offset-4 px-2">How It Works</Link>
+            <Link href="#faq" className="text-text-200 hover:text-primary-100 hover:underline underline-offset-4 px-2">FAQ</Link>
           </div>
-          <p className="mt-4">© {new Date().getFullYear()} MenuToPic. All rights reserved.</p>
+          <p className="mt-3 text-sm opacity-75">© {new Date().getFullYear()} MenuToPic. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -9,6 +9,7 @@ import { AnimationProvider } from "@/components/providers/animation-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { CreditsProvider } from "@/components/providers/credits-provider";
+import { ResponsiveProvider } from "@/components/providers/responsive-provider";
 
 const PlausibleProvider = dynamic(() => import("next-plausible"), { ssr: false });
 
@@ -56,6 +57,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <PlausibleProvider domain="MenuToPic.co" />
       </head>
       <body
@@ -64,12 +66,14 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             <AnimationProvider>
-              <CreditsProvider initialCredits={0}>
-                <Header />
-                <main className="flex-grow bg-bg-100" style={{ zoom: 0.95 }}>{children}</main>
-                <HelpButton />
-                <Footer />
-              </CreditsProvider>
+              <ResponsiveProvider>
+                <CreditsProvider initialCredits={0}>
+                  <Header />
+                  <main className="flex-grow bg-bg-100">{children}</main>
+                  <HelpButton />
+                  <Footer />
+                </CreditsProvider>
+              </ResponsiveProvider>
             </AnimationProvider>
           </ToastProvider>
         </AuthProvider>

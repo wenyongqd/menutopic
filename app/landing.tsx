@@ -5,7 +5,8 @@ import Image from "next/image";
 import { 
   ArrowRight, 
   Star,
-  ChevronRight
+  ChevronRight,
+  Mail
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MenuImageGallery } from "@/components/menu-image-gallery";
@@ -429,14 +430,30 @@ export default function LandingPage() {
                 >
                   Try It Now <ArrowRight className="h-5 w-5 ml-1" />
                 </Link>
-                <Link
-                  href="https://github.com/Nutlope/MenuToPic"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => {
+                    const emailConfig = {
+                      to: "support@chatopsis.com",
+                      subject: "MenuToPic Support Request",
+                      body: "Please describe your issue:\n\n" +
+                            "---------------------\n" +
+                            "• What problem are you experiencing?\n" +
+                            "• What were you trying to do?\n" +
+                            "• Any error messages you saw?\n\n" +
+                            "We'll get back to you within 24 hours.",
+                    };
+
+                    const mailtoLink = `mailto:${emailConfig.to}?subject=${encodeURIComponent(
+                      emailConfig.subject
+                    )}&body=${encodeURIComponent(emailConfig.body)}`;
+
+                    window.location.href = mailtoLink;
+                  }}
                   className="inline-flex items-center justify-center rounded-full border-2 border-white/40 bg-transparent px-8 py-4 text-lg font-medium text-white hover:bg-white/10 transition-all hover:border-white/60"
                 >
-                  View on GitHub
-                </Link>
+                  <Mail className="h-5 w-5 mr-2" />
+                  Contact Us
+                </button>
               </div>
               
               <div className="mt-12 flex flex-col items-center space-y-6">

@@ -215,23 +215,24 @@ export default function GalleryPage() {
 
   return (
     <div className="container mx-auto max-w-6xl py-12 px-4 space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center space-x-2 sm:space-x-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
+            className="mb-2 sm:mb-0"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-3xl font-bold">Your Generated Images</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Your Generated Images</h1>
         </div>
         <Button
           onClick={() => router.push('/images/generate')}
-          className="bg-primary-100 hover:bg-primary-200 text-white"
+          className="bg-primary-100 hover:bg-primary-200 text-white w-full sm:w-auto"
         >
-          Generate New Image
+          <span className="text-sm sm:text-base">Generate New Image</span>
         </Button>
       </div>
       

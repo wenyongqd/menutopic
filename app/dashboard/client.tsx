@@ -54,11 +54,11 @@ export function DashboardClient({ user, profile, recentImages }: DashboardClient
   return (
     <div className="container mx-auto max-w-6xl py-12 px-4 space-y-10">
       <div className="space-y-2 fade-in">
-        <h1 className="text-3xl md:text-4xl font-bold text-text-100">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-100 tracking-tight">
           Welcome to Your Dashboard
         </h1>
         <div className="flex justify-between items-center">
-          <p className="text-text-200 text-lg">
+          <p className="text-text-200 text-base sm:text-lg max-w-md">
             Manage your account and create amazing images
           </p>
         </div>

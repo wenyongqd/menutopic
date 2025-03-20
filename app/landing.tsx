@@ -194,10 +194,10 @@ export default function LandingPage() {
                   }
                 ].map((item, index) => (
                   <div key={index} className="relative flex flex-col items-center group">
-                    <div className="relative z-20 flex h-14 w-14 md:h-20 md:w-20 items-center justify-center rounded-full bg-primary-100 text-lg md:text-2xl font-bold text-white shadow-lg mb-6 md:mb-10 group-hover:scale-110 transition-transform duration-300">
+                    <div className="relative z-20 flex h-20 w-20 items-center justify-center rounded-full bg-primary-100 text-2xl font-bold text-white shadow-lg mb-10 group-hover:scale-110 transition-transform duration-300">
                       {item.step}
-                      <div className="absolute -inset-3 md:-inset-4 rounded-full border-2 border-dashed border-primary-100/30 animate-[spin_30s_linear_infinite]"></div>
-                      <div className="absolute -inset-4 md:-inset-6 rounded-full border border-primary-100/20 group-hover:border-primary-100/40 transition-colors duration-300"></div>
+                      <div className="absolute -inset-4 rounded-full border-2 border-dashed border-primary-100/30 animate-[spin_30s_linear_infinite]"></div>
+                      <div className="absolute -inset-6 rounded-full border border-primary-100/20 group-hover:border-primary-100/40 transition-colors duration-300"></div>
                     </div>
                     
                     <div className="bg-white rounded-2xl p-8 shadow-lg border border-bg-300/20 w-full h-full flex flex-col group-hover:shadow-xl group-hover:border-primary-100/30 transition-all duration-300 group-hover:translate-y-[-5px]">

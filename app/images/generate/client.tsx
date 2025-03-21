@@ -72,13 +72,18 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  // 添加新的状态来跟踪正在生成的菜单项
+  const [generatingItems, setGeneratingItems] = useState<Record<string, boolean>>({});
+  const [uploadInProgress, setUploadInProgress] = useState(false);
+  const [totalMenuItems, setTotalMenuItems] = useState(0);
+  const [completedItems, setCompletedItems] = useState(0);
 
   // 初始化 Bytescale 上传管理器
   const uploadManager = new Bytescale.UploadManager({
     apiKey: process.env.NEXT_PUBLIC_BYTESCALE_API_KEY || "free",
   });
 
-  const CREDITS_PER_IMAGE = 5; // Credits required per image
+  const CREDITS_PER_IMAGE = 50; // Credits required per image
 
   // 页面加载时刷新数据
   useEffect(() => {
@@ -126,10 +131,49 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     }
   }, [toast]);
 
-  // 处理菜单文件上传
-  const handleFileChange = async (file: File) => {
+  // 生成单个菜单项的图像
+  const generateImageForMenuItem = async (item: MenuItem): Promise<MenuItem> => {
+    try {
+      const response = await fetch("/api/generateImage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: `${item.name}, ${item.description}`,
+          singleItemRegeneration: false,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate image: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return {
+        ...item,
+        menuImage: data.image
+      };
+    } catch (error) {
+      console.error(`Error generating image for ${item.name}:`, error);
+      // 返回原始项目，但添加空的menuImage以保持类型一致
+      return {
+        ...item,
+        menuImage: { b64_json: "" }
+      };
+    } finally {
+      // 更新已完成的项目数量
+      setCompletedItems(prev => prev + 1);
+      // 标记此项目不再生成中
+      setGeneratingItems(prev => ({
+        ...prev,
+        [`${item.name}-${item.description}`]: false
+      }));
+    }
+  };
+
+  // 优化的文件处理函数 - 先解析、立即显示、后台上传
+  const handleFileChangeOptimized = async (file: File) => {
     if (!file) {
-      console.error("No file provided to handleFileChange");
+      console.error("No file provided to handleFileChangeOptimized");
       toast({
         title: "Upload failed",
         description: "No file was selected",
@@ -147,140 +191,172 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       return;
     }
 
-    console.log(
-      "File selected:",
-      file.name,
-      "Size:",
-      file.size,
-      "Type:",
-      file.type
-    );
+    console.log("File selected:", file.name, "Size:", file.size, "Type:", file.type);
 
     // 设置上传状态
     setIsUploading(true);
-
+    setUploadInProgress(true);
+    
+    // 立即在客户端创建并显示图像URL
     const objectUrl = URL.createObjectURL(file);
-    setStatus("uploading");
     setMenuUrl(objectUrl);
+    setStatus("parsing");
 
+    // 创建一个简单的样例菜单（稍后会被真实解析的结果替换）
+    const mockMenuItems: MenuItem[] = [
+      { name: "正在处理菜单...", price: "", description: "请稍候，我们正在解析您的菜单", menuImage: { b64_json: "" } },
+    ];
+    
+    // 显示初始状态
+    setParsedMenu(mockMenuItems);
+    
+    // 后台上传文件
+    const uploadFilePromise = (async () => {
+      try {
+        console.log("Starting upload to Bytescale in background...");
+        const { fileUrl } = await uploadManager.upload({
+          data: file,
+          mime: file.type,
+          originalFileName: file.name,
+        });
+        console.log("Background upload successful, file URL:", fileUrl);
+        return fileUrl;
+      } catch (error) {
+        console.error("Background upload error:", error);
+        throw error;
+      }
+    })();
+    
     try {
-      console.log("Starting upload to Bytescale...");
-      // 使用Bytescale上传文件
-      const { fileUrl } = await uploadManager.upload({
-        data: file,
-        mime: file.type,
-        originalFileName: file.name,
+      // 等待文件上传完成
+      const fileUrl = await uploadFilePromise;
+      
+      // 启动菜单解析
+      console.log("Sending request to parseMenu API...");
+      const res = await fetch("/api/parseMenu", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          menuUrl: fileUrl,
+        }),
       });
 
-      console.log("Upload successful, file URL:", fileUrl);
-      setMenuUrl(fileUrl);
-      setStatus("parsing");
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Server error response:", errorText);
+        throw new Error(`Server responded with status: ${res.status}. Details: ${errorText}`);
+      }
 
-      try {
-        console.log("Sending request to parseMenu API...");
-        const res = await fetch("/api/parseMenu", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            menuUrl: fileUrl,
-          }),
+      const json = await res.json();
+      console.log("parseMenu API response:", json);
+      
+      // 准备生成图像的菜单项
+      const menuItems = json.menu;
+      setTotalMenuItems(menuItems.length);
+      setCompletedItems(0);
+      
+      // 更新初步的菜单项（没有图像）
+      const initialMenuItems: MenuItem[] = menuItems.map((item: MenuItem) => ({
+        ...item,
+        menuImage: { b64_json: "" },
+      }));
+      
+      // 设置初始状态并标记所有项目为"正在生成"
+      setParsedMenu(initialMenuItems);
+      const generatingObj: Record<string, boolean> = {};
+      initialMenuItems.forEach((item) => {
+        generatingObj[`${item.name}-${item.description}`] = true;
+      });
+      setGeneratingItems(generatingObj);
+      
+      // 并行生成所有图像
+      const generatedItemsPromises = initialMenuItems.map(item => generateImageForMenuItem(item));
+      
+      // 为了更好的用户体验，我们会逐个处理结果而不是等待所有结果
+      for (let i = 0; i < generatedItemsPromises.length; i++) {
+        // 用轮询方式获取最先完成的promise
+        const completedItemIndex = await Promise.race(
+          generatedItemsPromises.map((promise, index) => 
+            promise.then(() => index).catch(() => index)
+          )
+        );
+        
+        // 获取已完成的项目
+        const completedItem = await generatedItemsPromises[completedItemIndex];
+        
+        // 更新菜单，替换对应的项目
+        setParsedMenu(prev => {
+          const updated = [...prev];
+          updated[completedItemIndex] = completedItem;
+          return updated;
         });
-
-        console.log("parseMenu API response status:", res.status);
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Server error response:", errorText);
-          throw new Error(
-            `Server responded with status: ${res.status}. Details: ${errorText}`
-          );
-        }
-
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error(`Expected JSON response but got ${contentType}`);
-        }
-
-        const json = await res.json();
-        console.log("parseMenu API response:", json);
-
-        // 更新状态和菜单数据
-        setParsedMenu(json.menu);
-        setStatus("created"); // 确保在数据设置后更新状态
-        setIsUploading(false); // 重置上传状态
-
-        // 立即更新本地积分显示
-        const newCredits = credits - CREDITS_PER_IMAGE;
-        updateCredits(newCredits);
-
-        // Fetch updated credits from the database
+      }
+      
+      // 所有图像生成完成后
+      setStatus("created");
+      setIsUploading(false);
+      setUploadInProgress(false);
+      
+      // 更新用户积分
+      const newCredits = credits - CREDITS_PER_IMAGE;
+      updateCredits(newCredits);
+      
+      // 更新数据库中的积分信息
+      if (user) {
         try {
-          if (user) {
-            const { data: updatedProfile, error } = await createClient()
-              .from("user_profiles")
-              .select("*")
-              .eq("id", user.id)
-              .single();
+          const { data: updatedProfile, error } = await createClient()
+            .from("user_profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
 
-            if (error) {
-              console.error("Failed to fetch updated credits:", error);
-            } else {
-              const updatedCredits =
-                updatedProfile?.credits !== undefined
-                  ? updatedProfile.credits
-                  : updatedProfile?.credit_amount || 0;
-              // 只有当数据库中的积分与本地计算的不一致时才更新
-              if (updatedCredits !== newCredits) {
-                updateCredits(updatedCredits);
-              }
+          if (error) {
+            console.error("Failed to fetch updated credits:", error);
+          } else {
+            const updatedCredits =
+              updatedProfile?.credits !== undefined
+                ? updatedProfile.credits
+                : updatedProfile?.credit_amount || 0;
+            if (updatedCredits !== newCredits) {
+              updateCredits(updatedCredits);
             }
           }
         } catch (creditFetchError) {
           console.error("Error fetching updated credits:", creditFetchError);
         }
-
-        // 清除已选择的文件
-        setSelectedFile(null);
-
-        toast({
-          title: "Menu processed successfully",
-          description: `${CREDITS_PER_IMAGE} credits have been deducted from your account`,
-          variant: "success",
-        });
-      } catch (parseError: unknown) {
-        console.error("Parse menu error:", parseError);
-        setStatus("initial");
-        setIsUploading(false);
-        toast({
-          title: "Failed to parse menu",
-          description:
-            parseError instanceof Error
-              ? parseError.message
-              : String(parseError),
-          variant: "destructive",
-        });
       }
-    } catch (uploadError: unknown) {
-      console.error("Upload error:", uploadError);
+      
+      // 清除文件选择
+      setSelectedFile(null);
+      
+      toast({
+        title: "Menu processed successfully",
+        description: `${CREDITS_PER_IMAGE} credits have been deducted from your account`,
+        variant: "success",
+      });
+      
+    } catch (error) {
+      console.error("Optimized file processing error:", error);
       setStatus("initial");
       setIsUploading(false);
+      setUploadInProgress(false);
       toast({
-        title: "Failed to upload image",
-        description:
-          uploadError instanceof Error
-            ? uploadError.message
-            : String(uploadError),
+        title: "Failed to process menu",
+        description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
-    } finally {
-      // 清理临时对象URL
+      
+      // 确保清除临时资源
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
     }
   };
+
+  // 原始的菜单文件上传函数（保留为备选）
+  const handleFileChange = handleFileChangeOptimized;
 
   // 处理示例菜单图片
   const handleSampleImage = async () => {
@@ -295,6 +371,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
 
     // 设置上传状态
     setIsUploading(true);
+    setUploadInProgress(true);
 
     // 这里可以使用一个示例菜单图片URL
     const sampleMenuUrl =
@@ -304,6 +381,14 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     setMenuUrl(sampleMenuUrl);
 
     try {
+      // 创建一个简单的样例菜单（稍后会被真实解析的结果替换）
+      const mockMenuItems: MenuItem[] = [
+        { name: "示例菜单处理中...", price: "", description: "我们正在解析示例菜单并生成图像", menuImage: { b64_json: "" } },
+      ];
+      
+      // 显示初始状态
+      setParsedMenu(mockMenuItems);
+
       console.log("Sending sample menu to parseMenu API...");
       const res = await fetch("/api/parseMenu", {
         method: "POST",
@@ -328,39 +413,57 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
       const json = await res.json();
       console.log("parseMenu API response:", json);
 
+      // 准备生成图像的菜单项
+      const menuItems = json.menu;
+      setTotalMenuItems(menuItems.length);
+      setCompletedItems(0);
+      
+      // 更新初步的菜单项（没有图像）
+      const initialMenuItems: MenuItem[] = menuItems.map((item: MenuItem) => ({
+        ...item,
+        menuImage: { b64_json: "" },
+      }));
+      
+      // 设置初始状态并标记所有项目为"正在生成"
+      setParsedMenu(initialMenuItems);
+      const generatingObj: Record<string, boolean> = {};
+      initialMenuItems.forEach((item) => {
+        generatingObj[`${item.name}-${item.description}`] = true;
+      });
+      setGeneratingItems(generatingObj);
+      
+      // 并行生成所有图像
+      const generatedItemsPromises = initialMenuItems.map(item => generateImageForMenuItem(item));
+      
+      // 为了更好的用户体验，我们会逐个处理结果而不是等待所有结果
+      for (let i = 0; i < generatedItemsPromises.length; i++) {
+        // 用轮询方式获取最先完成的promise
+        const completedItemIndex = await Promise.race(
+          generatedItemsPromises.map((promise, index) => 
+            promise.then(() => index).catch(() => index)
+          )
+        );
+        
+        // 获取已完成的项目
+        const completedItem = await generatedItemsPromises[completedItemIndex];
+        
+        // 更新菜单，替换对应的项目
+        setParsedMenu(prev => {
+          const updated = [...prev];
+          updated[completedItemIndex] = completedItem;
+          return updated;
+        });
+      }
+      
       // 立即更新本地积分显示
       const newCredits = credits - CREDITS_PER_IMAGE;
       updateCredits(newCredits);
 
-      // Fetch updated credits from the database
-      try {
-        if (user) {
-          const { data: updatedProfile, error } = await createClient()
-            .from("user_profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-
-          if (error) {
-            console.error("Failed to fetch updated credits:", error);
-          } else {
-            const updatedCredits =
-              updatedProfile?.credits !== undefined
-                ? updatedProfile.credits
-                : updatedProfile?.credit_amount || 0;
-            // 只有当数据库中的积分与本地计算的不一致时才更新
-            if (updatedCredits !== newCredits) {
-              updateCredits(updatedCredits);
-            }
-          }
-        }
-      } catch (creditFetchError) {
-        console.error("Error fetching updated credits:", creditFetchError);
-      }
-
+      // 所有图像生成完成后
       setStatus("created");
-      setParsedMenu(json.menu);
-
+      setIsUploading(false);
+      setUploadInProgress(false);
+      
       // 清除已选择的文件
       setSelectedFile(null);
 
@@ -372,14 +475,13 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     } catch (error: unknown) {
       console.error("Sample menu error:", error);
       setStatus("initial");
+      setIsUploading(false);
+      setUploadInProgress(false);
       toast({
         title: "Failed to process sample menu",
         description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
-    } finally {
-      // 重置上传状态
-      setIsUploading(false);
     }
   };
 
@@ -573,11 +675,15 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
     setPrompt(""); // 可选：清除提示文本
   };
 
+  const filterMenuItems = (items: MenuItem[], searchTerm: string): MenuItem[] => {
+    return items.filter((item) =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
   // 渲染主页面
   const hasEnoughCredits = credits >= CREDITS_PER_IMAGE;
-  const filteredMenu = parsedMenu.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMenu = filterMenuItems(parsedMenu, searchTerm);
 
   if (isLoading) {
     return (
@@ -1464,17 +1570,41 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
               className="pl-10 bg-bg-100 border-bg-300 text-text-100 placeholder:text-text-200/70"
             />
           </div>
+          
+          {/* 添加整体进度条显示 */}
+          {uploadInProgress && totalMenuItems > 0 && (
+            <div className="mb-6 bg-bg-100 p-4 rounded-lg border border-bg-200">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-sm font-medium">正在生成菜品图像</h3>
+                <span className="text-xs font-medium text-primary-100">
+                  {completedItems} / {totalMenuItems} 已完成
+                </span>
+              </div>
+              <div className="w-full bg-bg-200 rounded-full h-2.5">
+                <div
+                  className="bg-primary-100 h-2.5 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${totalMenuItems ? (completedItems / totalMenuItems) * 100 : 0}%`,
+                  }}
+                ></div>
+              </div>
+              <p className="text-xs text-text-200 mt-2">
+                菜品图像正在后台生成中，您可以在生成完成前先浏览已生成的图像
+              </p>
+            </div>
+          )}
+          
           <MenuGrid
             items={filteredMenu}
             onRegenerateItem={async (item, index) => {
               console.log("Regenerating item:", item.name, "at index:", index);
 
               // 确保用户有足够的积分
-              if (credits < 1) {
+              if (credits < 5) {
                 toast({
                   title: "Insufficient credits",
                   description:
-                    "You need at least 1 credit to regenerate an image",
+                    "You need at least 5 credits to regenerate an image",
                   variant: "destructive",
                 });
                 return;
@@ -1517,7 +1647,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                   setParsedMenu(updatedMenu);
 
                   // 更新用户积分
-                  updateCredits(credits - 1);
+                  updateCredits(credits - 5);
 
                   toast({
                     title: "Image regenerated",
@@ -1542,6 +1672,10 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                 throw error; // 重新抛出错误，让MenuGrid组件知道操作失败
               }
             }}
+            generatingItems={generatingItems}
+            totalItems={totalMenuItems}
+            completedItems={completedItems}
+            showProgress={uploadInProgress}
           />
         </div>
       )}

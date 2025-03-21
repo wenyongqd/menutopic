@@ -7,7 +7,7 @@ import { Together } from "together-ai"
 import { Database } from "@/types/supabase"
 
 // Credits required per image
-const CREDITS_PER_IMAGE = 5
+const CREDITS_PER_IMAGE = 50
 
 // Initialize Bytescale upload manager
 const uploadManager = new Bytescale.UploadManager({

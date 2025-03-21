@@ -10,7 +10,7 @@ import { NextResponse } from 'next/server';
 import { Database } from '@/types/supabase';
 
 // Credits required per menu
-const CREDITS_PER_MENU = 5;
+const CREDITS_PER_MENU = 50;
 
 // Initialize Bytescale upload manager
 const uploadManager = new Bytescale.UploadManager({

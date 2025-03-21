@@ -116,7 +116,7 @@ export function MenuGrid({ items, onRegenerateItem }: MenuGridProps) {
                       }}
                       disabled={imageStates[item.name] === "regenerating"}
                       className="bg-white bg-opacity-90 p-2 rounded-full shadow-md hover:bg-opacity-100 transition-colors"
-                      title="重新生成图片"
+                      title="Regenerate image"
                     >
                       {imageStates[item.name] === "regenerating" ? (
                         <ArrowPathIcon className="h-5 w-5 text-gray-700 animate-spin" />
@@ -133,7 +133,7 @@ export function MenuGrid({ items, onRegenerateItem }: MenuGridProps) {
                       handleDownload(item);
                     }}
                     className="bg-white bg-opacity-90 p-2 rounded-full shadow-md hover:bg-opacity-100 transition-colors"
-                    title="下载图片"
+                    title="Download image"
                   >
                     <ArrowDownTrayIcon className="h-5 w-5 text-gray-700" />
                   </button>
@@ -201,7 +201,7 @@ export function MenuGrid({ items, onRegenerateItem }: MenuGridProps) {
                       onClick={() => handleRegenerate(item, index)}
                       disabled={imageStates[item.name] === "regenerating"}
                       className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-                      title="重新生成图片"
+                      title="Regenerate image"
                     >
                       {imageStates[item.name] === "regenerating" ? (
                         <ArrowPathIcon className="h-4 w-4 text-gray-700 animate-spin" />
@@ -215,7 +215,7 @@ export function MenuGrid({ items, onRegenerateItem }: MenuGridProps) {
                   <button
                     onClick={() => handleDownload(item)}
                     className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-                    title="下载图片"
+                    title="Download image"
                   >
                     <ArrowDownTrayIcon className="h-4 w-4 text-gray-700" />
                   </button>

@@ -1451,7 +1451,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                 </p>
                 <p className="text-xs text-text-200 mt-1">
                   Click the <RefreshCw className="h-3 w-3 inline-block mx-1" />{" "}
-                  button on any image to regenerate it for just 1 credit.
+                  button on any image to regenerate it for 5 credit.
                 </p>
               </div>
             </div>

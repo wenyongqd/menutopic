@@ -6,13 +6,9 @@ import { ArrowDownTrayIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 interface MenuGridProps {
   items: MenuItem[];
   onRegenerateItem?: (item: MenuItem, index: number) => Promise<void>;
-  generatingItems: Record<string, boolean>;
-  totalItems: number;
-  completedItems: number;
-  showProgress: boolean;
 }
 
-export function MenuGrid({ items, onRegenerateItem, generatingItems, totalItems, completedItems, showProgress }: MenuGridProps) {
+export function MenuGrid({ items, onRegenerateItem }: MenuGridProps) {
   // 跟踪图片加载状态
   const [imageStates, setImageStates] = useState<Record<string, "loading" | "loaded" | "error" | "regenerating">>({});
   const [placeholderUrl, setPlaceholderUrl] = useState<string | null>(null);
@@ -92,25 +88,10 @@ export function MenuGrid({ items, onRegenerateItem, generatingItems, totalItems,
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {items.map((item, index) => (
         <div
-          key={`${item.name}-${index}`}
+          key={item.name}
           className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105"
         >
           <div className="relative h-48 bg-gray-100 group">
-            {/* 显示生成中状态 */}
-            {showProgress && generatingItems[`${item.name}-${item.description}`] && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 z-20">
-                <div className="mb-2">
-                  <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
-                </div>
-                <p className="text-sm text-white font-medium">正在生成图片...</p>
-                {totalItems > 0 && (
-                  <p className="text-xs text-gray-300 mt-1">
-                    进度: {completedItems} / {totalItems}
-                  </p>
-                )}
-              </div>
-            )}
-
             {item.menuImage && item.menuImage.b64_json ? (
               <>
                 <Image

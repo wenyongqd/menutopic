@@ -8,9 +8,9 @@ import { NextResponse } from 'next/server';
 import { Database } from '@/types/supabase';
 
 // Credits required per image
-const CREDITS_PER_IMAGE = 5;
+const CREDITS_PER_IMAGE = 1;
 // Credits required for menu processing
-const CREDITS_FOR_MENU = 50;
+const CREDITS_FOR_MENU = 10;
 
 // Initialize Bytescale upload manager
 const uploadManager = new Bytescale.UploadManager({
@@ -125,8 +125,8 @@ export async function POST(request: Request) {
     const userCredits = profile.credits !== undefined ? profile.credits : (profile.credit_amount || 0);
     
     // 根据不同操作类型设置所需积分：
-    // - 单个菜单项重新生成：5个积分 (CREDITS_PER_IMAGE)
-    // - 处理整个菜单：50个积分 (CREDITS_FOR_MENU)
+    // - 单个菜单项重新生成：1个积分 (CREDITS_PER_IMAGE)
+    // - 处理整个菜单：10个积分 (CREDITS_FOR_MENU)
     const CREDITS_REQUIRED = singleItemRegeneration ? CREDITS_PER_IMAGE : CREDITS_FOR_MENU;
     
     if (!profile || userCredits < CREDITS_REQUIRED) {

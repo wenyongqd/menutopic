@@ -79,8 +79,8 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
   });
 
   // 两种不同的积分消费
-  const CREDITS_FOR_MENU = 50; // Credits required for menu processing
-  const CREDITS_PER_IMAGE = 5;  // Credits required for single image generation
+  const CREDITS_FOR_MENU = 10; // Credits required for menu processing
+  const CREDITS_PER_IMAGE = 1;  // Credits required for single image generation
 
   // 页面加载时刷新数据
   useEffect(() => {
@@ -1451,7 +1451,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                 </p>
                 <p className="text-xs text-text-200 mt-1">
                   Click the <RefreshCw className="h-3 w-3 inline-block mx-1" />{" "}
-                  button on any image to regenerate it for 5 credit.
+                  button on any image to regenerate it for {CREDITS_PER_IMAGE} credit.
                 </p>
               </div>
             </div>
@@ -1473,11 +1473,11 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
               console.log("Regenerating item:", item.name, "at index:", index);
 
               // 确保用户有足够的积分
-              if (credits < 5) {
+              if (credits < CREDITS_PER_IMAGE) {
                 toast({
                   title: "Insufficient credits",
                   description:
-                    "You need at least 5 credits to regenerate an image",
+                    `You need at least ${CREDITS_PER_IMAGE} credits to regenerate an image`,
                   variant: "destructive",
                 });
                 return;
@@ -1520,7 +1520,7 @@ export function GenerateClient({ user, initialCredits }: GenerateClientProps) {
                   setParsedMenu(updatedMenu);
 
                   // 更新用户积分
-                  updateCredits(credits - 5);
+                  updateCredits(credits - CREDITS_PER_IMAGE);
 
                   toast({
                     title: "Image regenerated",

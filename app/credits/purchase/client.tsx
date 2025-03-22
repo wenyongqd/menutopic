@@ -332,7 +332,7 @@ export function PurchaseClient({ user, initialPackages }: PurchaseClientProps) {
                       <div className="h-5 w-5 rounded-full bg-primary-100/10 flex items-center justify-center mr-2 mt-0.5">
                         <ArrowRight className="h-3 w-3 text-primary-100" />
                       </div>
-                      <span>Generate {Math.floor((creditAmount || 0) / 5)} images</span>
+                      <span>Generate {Math.floor((creditAmount || 0) / 1)} images</span>
                     </div>
                     <div className="text-sm flex items-start">
                       <div className="h-5 w-5 rounded-full bg-primary-100/10 flex items-center justify-center mr-2 mt-0.5">
